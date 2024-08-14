@@ -9,7 +9,7 @@ import furst_optics
     argvalues=[
         furst_optics.SolarDisk(),
         furst_optics.SolarDisk(1000 * u.arcsec),
-    ]
+    ],
 )
 class TestSolarDisk(
     optika._tests.test_mixins.AbstractTestTranslatable,
