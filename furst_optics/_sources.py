@@ -36,7 +36,7 @@ class SolarDisk(
     def surface(self) -> optika.surfaces.Surface:
         """
         Convert this object into an instance of
-        :class:`optika.surface.AbstractSurface`.
+        :class:`optika.surfaces.AbstractSurface`.
         """
 
         return optika.surfaces.Surface(
