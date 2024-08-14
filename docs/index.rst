@@ -25,7 +25,7 @@ API Reference
     :template: module_custom.rst
     :recursive:
 
-    furst-optics
+    furst_optics
 
 
 Bibliography
