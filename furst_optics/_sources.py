@@ -14,6 +14,10 @@ __all__ = [
 class SolarDisk(
     optika.mixins.Translatable,
 ):
+    """
+    The nominal scene observed by FURST, the entire solar disk.
+    """
+
     radius: None | u.Quantity | na.AbstractScalar = None
     """
     The radius of the solar disk observed by FURST.
@@ -40,5 +44,6 @@ class SolarDisk(
             aperture=optika.apertures.CircularAperture(
                 radius=np.cos(self.radius),
             ),
+            is_field_stop=True,
             transformation=self.transformation,
         )
