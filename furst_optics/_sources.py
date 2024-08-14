@@ -22,7 +22,7 @@ class SolarDisk(
     """
     The radius of the solar disk observed by FURST.
     If :obj:`None` (the default), 
-    :attr:`sunpy.sun.constants.average_angular_size` is used.
+    :obj:`sunpy.sun.constants.average_angular_size` is used.
     """
 
     translation: u.Quantity | na.AbstractCartesian3dVectorArray = 0 * u.mm
