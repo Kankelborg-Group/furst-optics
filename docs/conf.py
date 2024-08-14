@@ -68,8 +68,8 @@ html_static_path = ['_static']
 
 html_theme_options = {
     "logo": {
-        "image_light": "_static/FURST_logo_dork_mode.png",
-        "image_dark": "_static/FURST_logo_light_mode.png",
+        "image_light": "_static/FURST_logo_light_mode.png",
+        "image_dark": "_static/FURST_logo_dork_mode.png",
     },
     "icon_links": [
         {
