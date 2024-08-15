@@ -8,7 +8,6 @@ __all__ = [
 ]
 
 
-
 @dataclasses.dataclass(eq=False, repr=False)
 class FrontAperture(
     optika.mixins.Translatable,
