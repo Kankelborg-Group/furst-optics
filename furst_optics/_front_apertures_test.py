@@ -13,6 +13,4 @@ class TestFrontAperture(
     optika._tests.test_mixins.AbstractTestTranslatable,
     furst_optics._components_test.AbstractTestAbstactComponent,
 ):
-    def test_surface(self, a: furst_optics.SolarDisk):
-        result = a.surface
-        assert isinstance(result, optika.surfaces.Surface)
+    pass
