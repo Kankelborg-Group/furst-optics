@@ -6,7 +6,7 @@ import furst_optics._components_test
 @pytest.mark.parametrize(
     argnames="a",
     argvalues=[
-        furst_optics.FrontAperture(),
+        furst_optics.apertures.FrontAperture(),
     ],
 )
 class TestFrontAperture(
