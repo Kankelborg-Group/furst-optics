@@ -88,7 +88,7 @@ class FeedOptic(
             ax.set_aspect("equal")
     """
 
-    name: str = 'feed optic'
+    name: str = "feed optic"
     """
     The human-readable name of this optic.
     """
@@ -196,12 +196,16 @@ class FeedOptic(
             aperture_mechanical=optika.apertures.RectangularAperture(
                 half_width=na.Cartesian2dVectorArray(
                     x=0.99 * self.radius,
-                    y=(self.aperture_height / 2 + self.margin_mounting + self.margin_polishing),
+                    y=(
+                        self.aperture_height / 2
+                        + self.margin_mounting
+                        + self.margin_polishing
+                    ),
                 ),
                 samples_wire=1001,
                 transformation=na.transformations.Cartesian3dTranslation(
                     y=self.margin_polishing - self.margin_mounting,
-                )
+                ),
             ),
             transformation=self.transformation,
         )

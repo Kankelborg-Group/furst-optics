@@ -13,7 +13,7 @@ import furst_optics._rowland_components_test
             rowland_radius=1000 * u.mm,
             rowland_azimuth=10 * u.deg,
         )
-    ]
+    ],
 )
 class TestFeedOptics(
     furst_optics._rowland_components_test.AbstractTestAbstractRowlandComponent
