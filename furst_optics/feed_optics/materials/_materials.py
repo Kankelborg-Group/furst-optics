@@ -24,12 +24,17 @@ def coating_design() -> optika.materials.MultilayerMirror:
         import furst_optics
 
         # Define an array of wavelengths with which to sample the efficiency
-        wavelength = na.geomspace(100, 600, axis="wavelength", num=101) * u.nm
+        wavelength = na.geomspace(120, 600, axis="wavelength", num=1001) * u.nm
 
         # Define the incident rays from the wavelength array
+        angle = 15 * u.deg
         rays = optika.rays.RayVectorArray(
             wavelength=wavelength,
-            direction=na.Cartesian3dVectorArray(0, 0, 1),
+            direction=na.Cartesian3dVectorArray(
+                x=np.sin(angle),
+                y=0,
+                z=np.cos(angle),
+            ),
         )
 
         # Initialize the FURST feed optic material
