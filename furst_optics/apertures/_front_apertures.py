@@ -12,7 +12,7 @@ __all__ = [
 @dataclasses.dataclass(eq=False, repr=False)
 class FrontAperture(
     optika.mixins.Translatable,
-    furst_optics.abcs.AbstractComponent,
+    furst_optics.abc.AbstractComponent,
 ):
     """
     The front aperture plate of the FURST instrument.

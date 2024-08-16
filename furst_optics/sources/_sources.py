@@ -14,7 +14,7 @@ __all__ = [
 @dataclasses.dataclass(eq=False, repr=False)
 class SolarDisk(
     optika.mixins.Translatable,
-    furst_optics.abcs.AbstractComponent,
+    furst_optics.abc.AbstractComponent,
 ):
     """
     The nominal scene observed by FURST, the entire solar disk.

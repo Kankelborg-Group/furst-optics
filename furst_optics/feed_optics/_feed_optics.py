@@ -16,7 +16,7 @@ class FeedOptic(
     optika.mixins.Rollable,
     optika.mixins.Yawable,
     optika.mixins.Pitchable,
-    furst_optics.abcs.AbstractRowlandComponent,
+    furst_optics.abc.AbstractRowlandComponent,
     optika.mixins.Translatable,
 ):
     """
