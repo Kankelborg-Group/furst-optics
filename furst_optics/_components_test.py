@@ -13,7 +13,6 @@ class AbstractTestAbstactComponent(
         assert isinstance(result, optika.surfaces.Surface)
 
 
-
 class AbstractTestAbstractRowlandComponent(
     AbstractTestAbstactComponent,
 ):

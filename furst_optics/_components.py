@@ -15,6 +15,10 @@ class AbstractComponent(
     optika.mixins.Printable,
     optika.mixins.Transformable,
 ):
+    """
+    A base class representing a single component
+    of the optical system.
+    """
 
     @property
     @abc.abstractmethod
@@ -23,7 +27,6 @@ class AbstractComponent(
         Convert this object into an instance of
         :class:`optika.surfaces.AbstractSurface`.
         """
-
 
 
 @dataclasses.dataclass(eq=False, repr=False)
