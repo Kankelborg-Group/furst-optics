@@ -116,7 +116,7 @@ class FeedOptic(
 
     margin_mounting: u.Quantity | na.AbstractScalar = 0 * u.mm
     """
-    The length of the optic used to hold it in it's mount.
+    The length of the optic used to hold it in its mount.
     """
 
     material: None | optika.materials.AbstractMaterial = None
