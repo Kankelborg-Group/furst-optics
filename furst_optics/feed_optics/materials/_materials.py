@@ -17,6 +17,7 @@ def coating_design() -> optika.materials.MultilayerMirror:
 
     .. jupyter-execute::
 
+        import numpy as np
         import matplotlib.pyplot as plt
         import astropy.units as u
         import named_arrays as na
