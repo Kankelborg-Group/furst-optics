@@ -8,7 +8,7 @@ class AbstractTestAbstactComponent(
     test_mixins.AbstractTestPrintable,
     test_mixins.AbstractTestTransformable,
 ):
-    def test_surface(self, a: furst_optics.SolarDisk):
+    def test_surface(self, a: furst_optics.abcs.AbstractComponent):
         result = a.surface
         assert isinstance(result, optika.surfaces.Surface)
 
