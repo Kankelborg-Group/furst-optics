@@ -1,5 +1,5 @@
 """
-Light sources which illuminate the instrument.
+Light sources observed by the instrument.
 """
 
 from ._sources import SolarDisk
