@@ -11,4 +11,5 @@ __all__ = [
     "abcs",
     "SolarDisk",
     "FrontAperture",
+    "feed_optics",
 ]
