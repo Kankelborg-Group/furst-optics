@@ -4,6 +4,30 @@ import astropy.units as u
 import named_arrays as na
 import optika
 
+__all__ = [
+    "AbstractComponent",
+    "AbstractRowlandComponent",
+]
+
+
+@dataclasses.dataclass(eq=False, repr=False)
+class AbstractComponent(
+    optika.mixins.Printable,
+    optika.mixins.Transformable,
+):
+    """
+    A base class representing a single component
+    of the optical system.
+    """
+
+    @property
+    @abc.abstractmethod
+    def surface(self):
+        """
+        Convert this object into an instance of
+        :class:`optika.surfaces.AbstractSurface`.
+        """
+
 
 @dataclasses.dataclass(eq=False, repr=False)
 class AbstractRowlandComponent(
@@ -41,11 +65,3 @@ class AbstractRowlandComponent(
                 na.transformations.Cartesian3dRotationY(self.rowland_azimuth),
             ]
         )
-
-    @property
-    @abc.abstractmethod
-    def surface(self):
-        """
-        Convert this object into an instance of
-        :class:`optika.surfaces.AbstractSurface`.
-        """
