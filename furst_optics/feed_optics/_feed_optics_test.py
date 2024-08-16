@@ -16,6 +16,6 @@ import furst_optics._components_test
     ],
 )
 class TestFeedOptics(
-    furst_optics._rowland_components_test.AbstractTestAbstractRowlandComponent
+    furst_optics._components_test.AbstractTestAbstractRowlandComponent
 ):
     pass
