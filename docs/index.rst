@@ -4,6 +4,9 @@ Introduction
 The Full-sun Ultraviolet Rocket Spectrometer (FURST) is a NASA sounding rocket
 mission designed to measure the full-disk spectrum of the Sun in the far
 ultraviolet spectral range (120 - 180 nm) with high spectral resolution.
+FURST is a Rowland circle spectrograph :cite:p:`Rowland1882` which is designed
+to minimize the number of optical surfaces, and provides the maximum possible
+throughput in the ultraviolet.
 
 This package provides a idealized model of the FURST optical system which is
 designed to be used by the FURST data reduction pipeline.
