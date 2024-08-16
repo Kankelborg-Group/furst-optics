@@ -2,6 +2,7 @@ import dataclasses
 import astropy.units as u
 import named_arrays as na
 import optika
+import furst_optics
 
 __all__ = [
     "FrontAperture",
@@ -11,6 +12,7 @@ __all__ = [
 @dataclasses.dataclass(eq=False, repr=False)
 class FrontAperture(
     optika.mixins.Translatable,
+    furst_optics.abcs.AbstractComponent,
 ):
     """
     The front aperture plate of the FURST instrument.
@@ -28,11 +30,6 @@ class FrontAperture(
 
     @property
     def surface(self) -> optika.surfaces.Surface:
-        """
-        Convert this object into an instance of
-        :class:`optika.surfaces.AbstractSurface`.
-        """
-
         return optika.surfaces.Surface(
             name="front aperture",
             transformation=self.transformation,

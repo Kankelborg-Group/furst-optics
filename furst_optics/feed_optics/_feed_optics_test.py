@@ -1,6 +1,6 @@
 import pytest
 import astropy.units as u
-import furst_optics._rowland_components_test
+import furst_optics._components_test
 
 
 @pytest.mark.parametrize(

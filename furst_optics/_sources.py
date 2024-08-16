@@ -4,6 +4,7 @@ import astropy.units as u
 import sunpy.sun.constants
 import named_arrays as na
 import optika
+import furst_optics
 
 __all__ = [
     "SolarDisk",
@@ -13,6 +14,7 @@ __all__ = [
 @dataclasses.dataclass(eq=False, repr=False)
 class SolarDisk(
     optika.mixins.Translatable,
+    furst_optics.abcs.AbstractComponent,
 ):
     """
     The nominal scene observed by FURST, the entire solar disk.
@@ -34,11 +36,6 @@ class SolarDisk(
 
     @property
     def surface(self) -> optika.surfaces.Surface:
-        """
-        Convert this object into an instance of
-        :class:`optika.surfaces.AbstractSurface`.
-        """
-
         return optika.surfaces.Surface(
             name="solar disk",
             aperture=optika.apertures.CircularAperture(

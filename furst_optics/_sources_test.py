@@ -1,7 +1,7 @@
 import pytest
 import astropy.units as u
 import optika._tests.test_mixins
-import furst_optics
+import furst_optics._components_test
 
 
 @pytest.mark.parametrize(
@@ -13,6 +13,7 @@ import furst_optics
 )
 class TestSolarDisk(
     optika._tests.test_mixins.AbstractTestTranslatable,
+    furst_optics._components_test.AbstractTestAbstactComponent,
 ):
     def test_surface(self, a: furst_optics.SolarDisk):
         result = a.surface
