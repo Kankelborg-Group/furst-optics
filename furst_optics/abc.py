@@ -1,5 +1,5 @@
 """
-Abstract base classes used throughout this project.
+Abstract base classes specific to this package.
 """
 
 from ._components import AbstractComponent, AbstractRowlandComponent
