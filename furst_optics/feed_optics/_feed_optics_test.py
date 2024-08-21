@@ -21,6 +21,6 @@ class TestFeedOptics(
     test_mixins.AbstractTestYawable,
     test_mixins.AbstractTestPitchable,
     test_mixins.AbstractTestTranslatable,
-    furst_optics._components_test.AbstractTestAbstractRowlandComponent
+    furst_optics._components_test.AbstractTestAbstractRowlandComponent,
 ):
     pass
