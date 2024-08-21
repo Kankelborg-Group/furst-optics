@@ -12,12 +12,11 @@ __all__ = [
 
 @dataclasses.dataclass(eq=False, repr=False)
 class FeedOptic(
-    optika.mixins.Printable,
     optika.mixins.Rollable,
     optika.mixins.Yawable,
     optika.mixins.Pitchable,
-    furst_optics.abc.AbstractRowlandComponent,
     optika.mixins.Translatable,
+    furst_optics.abc.AbstractRowlandComponent,
 ):
     """
     Model of the FURST feed optics.

@@ -1,5 +1,6 @@
 import pytest
 import astropy.units as u
+from optika._tests import test_mixins
 import furst_optics._components_test
 
 
@@ -16,6 +17,10 @@ import furst_optics._components_test
     ],
 )
 class TestFeedOptics(
-    furst_optics._components_test.AbstractTestAbstractRowlandComponent
+    test_mixins.AbstractTestRollable,
+    test_mixins.AbstractTestYawable,
+    test_mixins.AbstractTestPitchable,
+    test_mixins.AbstractTestTranslatable,
+    furst_optics._components_test.AbstractTestAbstractRowlandComponent,
 ):
     pass
