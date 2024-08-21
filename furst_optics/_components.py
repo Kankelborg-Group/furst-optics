@@ -31,7 +31,7 @@ class AbstractComponent(
 
 @dataclasses.dataclass(eq=False, repr=False)
 class AbstractRowlandComponent(
-    optika.mixins.Transformable,
+    AbstractComponent,
 ):
     """
     A base class representing an optical component
