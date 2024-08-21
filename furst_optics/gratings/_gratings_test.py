@@ -18,7 +18,7 @@ import furst_optics._components_test
                 diffraction_order=1,
             ),
         )
-    ]
+    ],
 )
 class TestGrating(
     test_mixins.AbstractTestRollable,

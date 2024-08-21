@@ -88,7 +88,7 @@ class Grating(
     The radius of curvature of the optical surface.
     """
 
-    width_clear : u.Quantity | na.AbstractCartesian2dVectorArray = 0 * u.mm
+    width_clear: u.Quantity | na.AbstractCartesian2dVectorArray = 0 * u.mm
     """
     The height and width of the clear aperture of the grating.
     """
