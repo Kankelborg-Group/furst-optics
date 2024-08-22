@@ -1,3 +1,7 @@
+"""
+Models and measurements of the reflective coatings.
+"""
+
 from ._materials import (
     coating_design,
     coating_witness_measured,
