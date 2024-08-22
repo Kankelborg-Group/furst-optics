@@ -17,6 +17,9 @@ def coating_design() -> optika.materials.MultilayerMirror:
     The as-designed coating for the FURST feed optics, Acton Optics
     broadband VUV coating #1200.
 
+    Since we presumably don't know the formula of this proprietary
+    coating, this function uses the formula in :cite:t:`Quijada2012`.
+
     Examples
     --------
 
@@ -80,7 +83,7 @@ def coating_design() -> optika.materials.MultilayerMirror:
             ),
             optika.materials.Layer(
                 chemical="Al",
-                thickness=50 * u.nm,
+                thickness=60 * u.nm,
                 interface=optika.materials.profiles.ErfInterfaceProfile(1 * u.nm),
                 kwargs_plot=dict(
                     color="tab:blue",
