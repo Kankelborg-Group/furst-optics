@@ -35,7 +35,7 @@ def coating_design() -> optika.materials.MultilayerMirror:
         wavelength = na.geomspace(120, 600, axis="wavelength", num=1001) * u.nm
 
         # Define the incident rays from the wavelength array
-        angle = 15 * u.deg
+        angle = na.linspace(0, 75, axis="angle", num=5) * u.deg
         rays = optika.rays.RayVectorArray(
             wavelength=wavelength,
             direction=na.Cartesian3dVectorArray(
@@ -45,20 +45,27 @@ def coating_design() -> optika.materials.MultilayerMirror:
             ),
         )
 
-        # Initialize the FURST feed optic material
-        material = furst_optics.feed_optics.materials.coating_design()
+        # Initialize the FURST feed optic coating model
+        coating = furst_optics.feed_optics.materials.coating_design()
 
         # Compute the reflectivity of the feed optics
-        reflectivity = material.efficiency(
+        reflectivity = coating.efficiency(
             rays=rays,
             normal=na.Cartesian3dVectorArray(0, 0, -1),
         )
 
         # Plot the reflectivity of the feed optics vs wavelength
         fig, ax = plt.subplots(constrained_layout=True)
-        na.plt.plot(wavelength, reflectivity, ax=ax);
+        na.plt.plot(
+            wavelength,
+            reflectivity,
+            ax=ax,
+            axis="wavelength",
+            label=angle,
+        );
         ax.set_xlabel(f"wavelength ({wavelength.unit:latex_inline})");
         ax.set_ylabel("reflectivity");
+        ax.legend(title="incidence angle");
     """
     return optika.materials.MultilayerMirror(
         layers=[
