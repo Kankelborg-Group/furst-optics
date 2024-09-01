@@ -10,7 +10,7 @@ class AbstractTestAbstactComponent(
 ):
     def test_surface(self, a: furst_optics.abc.AbstractComponent):
         result = a.surface
-        assert isinstance(result, optika.surfaces.Surface)
+        assert isinstance(result, optika.surfaces.AbstractSurface)
 
 
 class AbstractTestAbstractRowlandComponent(
