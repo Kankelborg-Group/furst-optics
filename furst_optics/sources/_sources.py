@@ -7,14 +7,25 @@ import optika
 import furst_optics
 
 __all__ = [
+    "AbstractSource",
     "SolarDisk",
 ]
 
 
 @dataclasses.dataclass(eq=False, repr=False)
-class SolarDisk(
+class AbstractSource(
     optika.mixins.Translatable,
     furst_optics.abc.AbstractComponent,
+):
+    """
+    An interface describing an arbitrary light source
+    observed by FURST.
+    """
+
+
+@dataclasses.dataclass(eq=False, repr=False)
+class SolarDisk(
+    AbstractSource,
 ):
     """
     The nominal scene observed by FURST, the entire solar disk.
