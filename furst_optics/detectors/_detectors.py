@@ -152,20 +152,18 @@ class Detector(
 
     pitch: u.Quantity | na.AbstractScalar = 0 * u.deg
     """
-    The angle of rotation about the vector tangent to the
-    Rowland circle.
+    The angle of rotation about the long axis of the detector.
     """
 
     yaw: u.Quantity | na.AbstractScalar = 0 * u.deg
     """
-    The angle of rotation about the axis of symmetry
-    of the feed optic.
+    The angle of rotation about the short axis of the detector.
     """
 
     roll: u.Quantity | na.AbstractScalar = 0 * u.deg
     """
     The angle of rotation about the vector normal to
-    the Rowland circle.
+    the surface of the detector.
     """
 
     temperature: u.Quantity | na.ScalarArray = 0 * u.K
