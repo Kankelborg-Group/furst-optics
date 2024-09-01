@@ -7,6 +7,7 @@ from . import sources
 from . import apertures
 from . import feed_optics
 from . import gratings
+from . import detectors
 
 __all__ = [
     "abc",
@@ -14,4 +15,5 @@ __all__ = [
     "apertures",
     "feed_optics",
     "gratings",
+    "detectors",
 ]
