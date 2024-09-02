@@ -12,14 +12,14 @@ __all__ = [
     "Grating",
 ]
 
+#: Generic sag type
 SagT = TypeVar("SagT", bound=None | optika.sags.AbstractSag)
-"""Generic sag type."""
 
+#: Generic material type
 MaterialT = TypeVar("MaterialT", bound=None | optika.materials.AbstractMaterial)
-"""Generic material type."""
 
+#: Generic ruling type
 RulingT = TypeVar("RulingT", bound=None | optika.rulings.AbstractRulings)
-"""Generic ruling type."""
 
 
 @dataclasses.dataclass(eq=False, repr=False)
