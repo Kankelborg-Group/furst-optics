@@ -1,5 +1,6 @@
 import pytest
 import astropy.units as u
+import named_arrays as na
 from optika._tests import test_mixins
 import furst_optics._components_test
 
@@ -23,4 +24,7 @@ class TestFeedOptics(
     test_mixins.AbstractTestTranslatable,
     furst_optics._components_test.AbstractTestAbstractRowlandComponent,
 ):
-    pass
+
+    def test_transformation_image(self, a: furst_optics.feed_optics.FeedOptic):
+        result = a.transformation_image
+        assert isinstance(result, na.transformations.AbstractTransformation)

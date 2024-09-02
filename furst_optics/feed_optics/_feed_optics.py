@@ -179,6 +179,20 @@ class FeedOptic(
         return t_img @ super().transformation @ t_yaw @ t_center
 
     @property
+    def transformation_image(self):
+        """
+        Coordinate transformation from the global coordinate system
+        and the virtual image of the Sun inside the feed optic.
+        """
+
+        t_img = na.transformations.Cartesian3dTranslation(
+            x=0 * u.mm,
+            y=0 * u.mm,
+            z=self.radius / 2,
+        )
+        return t_img @ self.transformation
+
+    @property
     def surface(self) -> optika.surfaces.Surface:
         return optika.surfaces.Surface(
             name=self.name,
