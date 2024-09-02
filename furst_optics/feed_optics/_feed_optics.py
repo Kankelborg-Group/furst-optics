@@ -20,7 +20,7 @@ class FeedOptic(
     furst_optics.abc.AbstractRowlandComponent,
     Generic[
         furst_optics.typevars.MaterialT,
-    ]
+    ],
 ):
     """
     Model of the FURST feed optics.
