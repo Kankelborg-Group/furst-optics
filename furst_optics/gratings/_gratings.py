@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Generic
 import dataclasses
 import astropy.units as u
 import named_arrays as na
@@ -8,7 +8,6 @@ import furst_optics
 __all__ = [
     "Grating",
 ]
-
 
 
 @dataclasses.dataclass(eq=False, repr=False)
