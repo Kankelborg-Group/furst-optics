@@ -1,3 +1,4 @@
+from typing import Generic
 import dataclasses
 import numpy as np
 import astropy.units as u
@@ -17,6 +18,7 @@ class FeedOptic(
     optika.mixins.Pitchable,
     optika.mixins.Translatable,
     furst_optics.abc.AbstractRowlandComponent,
+    Generic[furst_optics.typevars.MaterialT],
 ):
     """
     Model of the FURST feed optics.
@@ -118,7 +120,7 @@ class FeedOptic(
     The length of the optic used to hold it in its mount.
     """
 
-    material: None | optika.materials.AbstractMaterial = None
+    material: furst_optics.typevars.MaterialT = None
     """
     The coating material used to make the optic reflective
     in the target spectral range.
