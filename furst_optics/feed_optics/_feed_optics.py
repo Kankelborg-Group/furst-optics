@@ -18,9 +18,7 @@ class FeedOptic(
     optika.mixins.Pitchable,
     optika.mixins.Translatable,
     furst_optics.abc.AbstractRowlandComponent,
-    Generic[
-        furst_optics.typevars.MaterialT,
-    ],
+    Generic[furst_optics.typevars.MaterialT],
 ):
     """
     Model of the FURST feed optics.
