@@ -13,17 +13,17 @@ __all__ = [
 ]
 
 
-#: Generic sag type.
+#: Sag type variable.
 #: Should be :obj:`None` or a subclass of
 #: :class:`optika.sags.AbstractSag`
 SagT = TypeVar("SagT", bound=None | optika.sags.AbstractSag)
 
-#: Generic material type.
+#: Material type variable.
 #: Should be :obj:`None` or a subclass of
 #: :class:`optika.materials.AbstractMaterial`
 MaterialT = TypeVar("MaterialT", bound=None | optika.materials.AbstractMaterial)
 
-#: Generic ruling type.
+#: Ruling type variable.
 #: Should be :obj:`None` or a subclass of
 #: :class:`optika.rulings.AbstractRulings`
 RulingT = TypeVar("RulingT", bound=None | optika.rulings.AbstractRulings)
