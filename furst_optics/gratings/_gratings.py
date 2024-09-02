@@ -56,7 +56,7 @@ class Grating(
         grating = furst_optics.gratings.Grating(
             sag=optika.sags.SphericalSag(
                 radius=-2 * rowland_radius,
-            )
+            ),
             width_clear=na.Cartesian2dVectorArray(
                 x=1000 * u.mm,
                 y=20 * u.mm,
