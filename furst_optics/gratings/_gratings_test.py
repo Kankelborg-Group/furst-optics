@@ -9,7 +9,9 @@ import furst_optics._components_test
     argnames="a",
     argvalues=[
         furst_optics.gratings.Grating(
-            radius=1000 * u.mm,
+            sag=optika.sags.SphericalSag(
+                radius=1000 * u.mm,
+            ),
             width_clear=10 * u.mm,
             width_mech=15 * u.mm,
             material=optika.materials.Mirror(),

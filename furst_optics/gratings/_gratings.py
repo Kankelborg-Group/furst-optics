@@ -1,3 +1,4 @@
+from typing import Generic, TypeVar
 import dataclasses
 import astropy.units as u
 import named_arrays as na
@@ -8,6 +9,10 @@ __all__ = [
     "Grating",
 ]
 
+SagT = TypeVar("SagT", bound=None | optika.sags.AbstractSag)
+MaterialT = TypeVar("MaterialT", bound=None | optika.materials.AbstractMaterial)
+RulingT = TypeVar("RulingT", bound=None | optika.rulings.AbstractRulings)
+
 
 @dataclasses.dataclass(eq=False, repr=False)
 class Grating(
@@ -16,6 +21,7 @@ class Grating(
     optika.mixins.Pitchable,
     optika.mixins.Translatable,
     furst_optics.abc.AbstractRowlandComponent,
+    Generic[SagT, MaterialT, RulingT],
 ):
     """
     A model of the FURST diffraction grating.
@@ -48,7 +54,9 @@ class Grating(
 
         # Define the grating model
         grating = furst_optics.gratings.Grating(
-            radius=-2 *  rowland_radius,
+            sag=optika.sags.SphericalSag(
+                radius=-2 * rowland_radius,
+            )
             width_clear=na.Cartesian2dVectorArray(
                 x=1000 * u.mm,
                 y=20 * u.mm,
@@ -83,6 +91,11 @@ class Grating(
     The human-readable name of this optic.
     """
 
+    sag: SagT = None
+    """
+    The sag profile of the grating surface.
+    """
+
     radius: u.Quantity | na.AbstractScalar = 0 * u.mm
     """
     The radius of curvature of the optical surface.
@@ -98,13 +111,13 @@ class Grating(
     The height and width of the grating substrate.
     """
 
-    material: None | optika.materials.AbstractMaterial = None
+    material: MaterialT = None
     """
     The coating material used to make the optic reflective
     in the target spectral range.
     """
 
-    rulings: None | optika.rulings.AbstractRulings = None
+    rulings: RulingT = None
     """
     A model of the grating ruling spacing and profile.
     """
@@ -150,9 +163,7 @@ class Grating(
     def surface(self) -> optika.surfaces.Surface:
         return optika.surfaces.Surface(
             name=self.name,
-            sag=optika.sags.SphericalSag(
-                radius=self.radius,
-            ),
+            sag=self.sag,
             material=self.material,
             aperture=optika.apertures.RectangularAperture(
                 half_width=self.width_clear / 2,
