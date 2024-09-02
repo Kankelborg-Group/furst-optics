@@ -6,20 +6,9 @@ import optika
 import furst_optics
 
 __all__ = [
-    "SagT",
-    "MaterialT",
-    "RulingT",
     "Grating",
 ]
 
-#: Generic sag type
-SagT = TypeVar("SagT", bound=None | optika.sags.AbstractSag)
-
-#: Generic material type
-MaterialT = TypeVar("MaterialT", bound=None | optika.materials.AbstractMaterial)
-
-#: Generic ruling type
-RulingT = TypeVar("RulingT", bound=None | optika.rulings.AbstractRulings)
 
 
 @dataclasses.dataclass(eq=False, repr=False)
@@ -29,7 +18,11 @@ class Grating(
     optika.mixins.Pitchable,
     optika.mixins.Translatable,
     furst_optics.abc.AbstractRowlandComponent,
-    Generic[SagT, MaterialT, RulingT],
+    Generic[
+        furst_optics.typevars.SagT,
+        furst_optics.typevars.MaterialT,
+        furst_optics.typevars.RulingT,
+    ],
 ):
     """
     A model of the FURST diffraction grating.
@@ -99,7 +92,7 @@ class Grating(
     The human-readable name of this optic.
     """
 
-    sag: SagT = None
+    sag: furst_optics.typevars.SagT = None
     """
     The sag profile of the grating surface.
     """
@@ -119,13 +112,13 @@ class Grating(
     The height and width of the grating substrate.
     """
 
-    material: MaterialT = None
+    material: furst_optics.typevars.MaterialT = None
     """
     The coating material used to make the optic reflective
     in the target spectral range.
     """
 
-    rulings: RulingT = None
+    rulings: furst_optics.typevars.RulingT = None
     """
     A model of the grating ruling spacing and profile.
     """
