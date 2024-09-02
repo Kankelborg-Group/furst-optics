@@ -10,5 +10,8 @@ from ._gratings import (
 )
 
 __all__ = [
+    "SagT",
+    "MaterialT",
+    "RulingT",
     "Grating",
 ]
