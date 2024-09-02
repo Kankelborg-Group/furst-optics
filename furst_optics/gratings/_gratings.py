@@ -6,12 +6,20 @@ import optika
 import furst_optics
 
 __all__ = [
+    "SagT",
+    "MaterialT",
+    "RulingT",
     "Grating",
 ]
 
 SagT = TypeVar("SagT", bound=None | optika.sags.AbstractSag)
+"""Generic sag type."""
+
 MaterialT = TypeVar("MaterialT", bound=None | optika.materials.AbstractMaterial)
+"""Generic material type."""
+
 RulingT = TypeVar("RulingT", bound=None | optika.rulings.AbstractRulings)
+"""Generic ruling type."""
 
 
 @dataclasses.dataclass(eq=False, repr=False)
