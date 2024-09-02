@@ -10,6 +10,7 @@ throughput in the ultraviolet.
 
 This package provides an idealized model of the FURST optical system which is
 designed to be used by the FURST data reduction pipeline.
+It uses the :mod:`optika` package to model and simulate the optical system.
 
 Installation
 ============
