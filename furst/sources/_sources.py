@@ -50,7 +50,7 @@ class SolarDisk(
         return optika.surfaces.Surface(
             name="solar disk",
             aperture=optika.apertures.CircularAperture(
-                radius=np.cos(self.radius),
+                radius=np.sin(self.radius),
             ),
             is_field_stop=True,
             transformation=self.transformation,
