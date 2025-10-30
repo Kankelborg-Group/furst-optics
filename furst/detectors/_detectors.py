@@ -126,7 +126,7 @@ class Detector(
     The number of blank columns for each tap.
     """
 
-    material: None | optika.sensors.AbstractImagingSensorMaterial = None
+    material: None | optika.sensors.materials.AbstractSensorMaterial = None
     """
     A model of the light-sensitive material of this detector.
     """
