@@ -4,7 +4,7 @@ import astropy.units as u
 import sunpy.sun.constants
 import named_arrays as na
 import optika
-import furst_optics
+import furst
 
 __all__ = [
     "AbstractSource",
@@ -15,7 +15,7 @@ __all__ = [
 @dataclasses.dataclass(eq=False, repr=False)
 class AbstractSource(
     optika.mixins.Translatable,
-    furst_optics.abc.AbstractComponent,
+    furst.abc.AbstractComponent,
 ):
     """
     An interface describing an arbitrary light source

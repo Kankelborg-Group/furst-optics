@@ -2,7 +2,7 @@ import dataclasses
 import astropy.units as u
 import named_arrays as na
 import optika
-import furst_optics
+import furst
 
 __all__ = [
     "FrontAperture",
@@ -12,7 +12,7 @@ __all__ = [
 @dataclasses.dataclass(eq=False, repr=False)
 class FrontAperture(
     optika.mixins.Translatable,
-    furst_optics.abc.AbstractComponent,
+    furst.abc.AbstractComponent,
 ):
     """
     The front aperture plate of the FURST instrument.

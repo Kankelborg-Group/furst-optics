@@ -3,7 +3,7 @@ import dataclasses
 import astropy.units as u
 import named_arrays as na
 import optika
-import furst_optics
+import furst
 
 __all__ = [
     "Grating",
@@ -16,11 +16,11 @@ class Grating(
     optika.mixins.Yawable,
     optika.mixins.Pitchable,
     optika.mixins.Translatable,
-    furst_optics.abc.AbstractRowlandComponent,
+    furst.abc.AbstractRowlandComponent,
     Generic[
-        furst_optics.typevars.SagT,
-        furst_optics.typevars.MaterialT,
-        furst_optics.typevars.RulingT,
+        furst.typevars.SagT,
+        furst.typevars.MaterialT,
+        furst.typevars.RulingT,
     ],
 ):
     """
@@ -42,7 +42,7 @@ class Grating(
         import astropy.visualization
         import named_arrays as na
         import optika
-        import furst_optics
+        import furst
 
         # Define the Rowland circle
         rowland_radius = 1000 * u.mm
@@ -53,7 +53,7 @@ class Grating(
         )
 
         # Define the grating model
-        grating = furst_optics.gratings.Grating(
+        grating = furst.gratings.Grating(
             sag=optika.sags.SphericalSag(
                 radius=-2 * rowland_radius,
             ),
@@ -91,7 +91,7 @@ class Grating(
     The human-readable name of this optic.
     """
 
-    sag: furst_optics.typevars.SagT = None
+    sag: furst.typevars.SagT = None
     """
     The sag profile of the grating surface.
     """
@@ -111,13 +111,13 @@ class Grating(
     The height and width of the grating substrate.
     """
 
-    material: furst_optics.typevars.MaterialT = None
+    material: furst.typevars.MaterialT = None
     """
     The coating material used to make the optic reflective
     in the target spectral range.
     """
 
-    rulings: furst_optics.typevars.RulingT = None
+    rulings: furst.typevars.RulingT = None
     """
     A model of the grating ruling spacing and profile.
     """
