@@ -32,7 +32,7 @@ def coating_design() -> optika.materials.MultilayerMirror:
         import astropy.units as u
         import named_arrays as na
         import optika
-        import furst_optics
+        import furst
 
         # Define an array of wavelengths with which to sample the efficiency
         wavelength = na.geomspace(120, 600, axis="wavelength", num=1001) * u.nm
@@ -49,7 +49,7 @@ def coating_design() -> optika.materials.MultilayerMirror:
         )
 
         # Initialize the FURST feed optic coating model
-        coating = furst_optics.feed_optics.materials.coating_design()
+        coating = furst.feed_optics.materials.coating_design()
 
         # Compute the reflectivity of the feed optics
         reflectivity = coating.efficiency(
@@ -123,13 +123,13 @@ def coating_witness_measured() -> optika.materials.MeasuredMirror:
         import astropy.visualization
         import named_arrays as na
         import optika
-        import furst_optics
+        import furst
 
         # Load the coating model
-        coating_model = furst_optics.feed_optics.materials.coating_design()
+        coating_model = furst.feed_optics.materials.coating_design()
 
         # Load the model and the witness sample measurements
-        coating_measurement = furst_optics.feed_optics.materials.coating_witness_measured()
+        coating_measurement = furst.feed_optics.materials.coating_witness_measured()
         measurement = coating_measurement.efficiency_measured
 
         # Isolate the wavelengths of the measurement
@@ -210,7 +210,7 @@ def coating_witness_fit() -> optika.materials.MultilayerMirror:
         import matplotlib.pyplot as plt
         import named_arrays as na
         import optika
-        from furst_optics import feed_optics
+        from furst import feed_optics
 
         # Load the measured reflectivity of the witness sample
         multilayer_measured = feed_optics.materials.coating_witness_measured()

@@ -2,7 +2,7 @@ import dataclasses
 import astropy.units as u
 import named_arrays as na
 import optika
-import furst_optics
+import furst
 
 __all__ = [
     "Detector",
@@ -15,7 +15,7 @@ class Detector(
     optika.mixins.Yawable,
     optika.mixins.Pitchable,
     optika.mixins.Translatable,
-    furst_optics.abc.AbstractRowlandComponent,
+    furst.abc.AbstractRowlandComponent,
 ):
     """
     A model of FURST's imaging sensor and camera.
@@ -36,7 +36,7 @@ class Detector(
         import astropy.visualization
         import named_arrays as na
         import optika
-        import furst_optics
+        import furst
 
         # Define the Rowland circle
         rowland_radius = 1000 * u.mm
@@ -47,7 +47,7 @@ class Detector(
         )
 
         # Define the grating model
-        detector = furst_optics.detectors.Detector(
+        detector = furst.detectors.Detector(
             width_pixel=15 * u.um,
             axis_pixel=na.Cartesian2dVectorArray(
                 x="detector_x",

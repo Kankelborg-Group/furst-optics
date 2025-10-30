@@ -4,7 +4,7 @@ import numpy as np
 import astropy.units as u
 import named_arrays as na
 import optika
-import furst_optics
+import furst
 
 __all__ = [
     "FeedOptic",
@@ -17,8 +17,8 @@ class FeedOptic(
     optika.mixins.Yawable,
     optika.mixins.Pitchable,
     optika.mixins.Translatable,
-    furst_optics.abc.AbstractRowlandComponent,
-    Generic[furst_optics.typevars.MaterialT],
+    furst.abc.AbstractRowlandComponent,
+    Generic[furst.typevars.MaterialT],
 ):
     """
     Model of the FURST feed optics.
@@ -41,7 +41,7 @@ class FeedOptic(
         import astropy.units as u
         import astropy.visualization
         import named_arrays as na
-        import furst_optics
+        import furst
 
         # Define the Rowland circle
         rowland_radius = 1000 * u.mm
@@ -52,7 +52,7 @@ class FeedOptic(
         )
 
         # Define the exaggerated feed optic array
-        feed_optic = furst_optics.feed_optics.FeedOptic(
+        feed_optic = furst.feed_optics.FeedOptic(
             radius=25 * u.mm,
             aperture_subtent=30 * u.deg,
             aperture_height=10 * u.mm,
@@ -120,7 +120,7 @@ class FeedOptic(
     The length of the optic used to hold it in its mount.
     """
 
-    material: furst_optics.typevars.MaterialT = None
+    material: furst.typevars.MaterialT = None
     """
     The coating material used to make the optic reflective
     in the target spectral range.

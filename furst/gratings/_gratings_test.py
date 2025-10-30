@@ -2,13 +2,13 @@ import pytest
 import astropy.units as u
 import optika
 from optika._tests import test_mixins
-import furst_optics._components_test
+import furst._components_test
 
 
 @pytest.mark.parametrize(
     argnames="a",
     argvalues=[
-        furst_optics.gratings.Grating(
+        furst.gratings.Grating(
             sag=optika.sags.SphericalSag(
                 radius=1000 * u.mm,
             ),
@@ -27,6 +27,6 @@ class TestGrating(
     test_mixins.AbstractTestYawable,
     test_mixins.AbstractTestPitchable,
     test_mixins.AbstractTestTranslatable,
-    furst_optics._components_test.AbstractTestAbstractRowlandComponent,
+    furst._components_test.AbstractTestAbstractRowlandComponent,
 ):
     pass
