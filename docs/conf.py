@@ -114,4 +114,5 @@ intersphinx_mapping = {
     'sunpy': ('https://docs.sunpy.org/en/stable/', None),
     'named_arrays': ('https://named-arrays.readthedocs.io/en/stable/', None),
     'optika': ('https://optika.readthedocs.io/en/stable/', None),
+    'msfc_ccd': ('https://msfc-ccd.readthedocs.io/en/stable/', None),
 }

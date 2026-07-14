@@ -9,14 +9,14 @@ authors = [
 ]
 description = "A model of the optical design for the Full-sun Ultraviolet Rocket Spectrometer (FURST)."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
     "astropy",
     "sunpy",
-    "optika~=0.4",
+    "msfc-ccd~=1.0",
 ]
 dynamic = ["version"]
 

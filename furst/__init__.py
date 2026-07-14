@@ -8,7 +8,8 @@ from . import sources
 from . import apertures
 from . import feed_optics
 from . import gratings
-from . import detectors
+from . import sensors
+from . import cameras
 
 __all__ = [
     "typevars",
@@ -17,5 +18,6 @@ __all__ = [
     "apertures",
     "feed_optics",
     "gratings",
-    "detectors",
+    "sensors",
+    "cameras",
 ]
