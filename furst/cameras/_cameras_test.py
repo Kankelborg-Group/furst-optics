@@ -1,6 +1,6 @@
 import pytest
 import optika
-from msfc_ccd._tests.test_cameras import AbstractTestAbstractSensor
+from msfc_ccd._tests.test_cameras import AbstractTestAbstractCamera
 import furst
 
 
@@ -11,7 +11,7 @@ import furst
     ],
 )
 class TestCameras(
-    AbstractTestAbstractSensor,
+    AbstractTestAbstractCamera,
 ):
     def test_surface(
         self,
