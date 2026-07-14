@@ -1,28 +1,22 @@
 import pytest
-import astropy.units as u
-import named_arrays as na
 from optika._tests import test_mixins
+from msfc_ccd._tests.test_sensors import AbstractTestAbstractSensor
 import furst._components_test
+import furst
 
 
 @pytest.mark.parametrize(
     argnames="a",
     argvalues=[
-        furst.detectors.Detector(
-            width_pixel=15 * u.um,
-            axis_pixel=na.Cartesian2dVectorArray(
-                x="detector_x",
-                y="detector_y",
-            ),
-            num_pixel=2048,
-        )
+        furst.sensors.Sensor(),
     ],
 )
-class TestDetector(
+class TestSensor(
     test_mixins.AbstractTestRollable,
     test_mixins.AbstractTestYawable,
     test_mixins.AbstractTestPitchable,
     test_mixins.AbstractTestTranslatable,
+    AbstractTestAbstractSensor,
     furst._components_test.AbstractTestAbstractRowlandComponent,
 ):
     pass
