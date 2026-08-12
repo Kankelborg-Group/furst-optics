@@ -31,6 +31,13 @@ API Reference
 
     furst
 
+Reports
+=======
+Investigations into the performance and calibration of FURST.
+
+.. toctree::
+
+    reports/flat-field-led
 
 Bibliography
 ============

@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
     'jupyter_sphinx',
+    'nbsphinx',
     'sphinx_favicon',
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
@@ -105,6 +106,8 @@ master_doc = 'index'
 bibtex_bibfiles = ['refs.bib']
 bibtex_default_style = 'plain'
 bibtex_reference_style = 'author_year'
+
+nbsphinx_execute = 'always'
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
