@@ -32,6 +32,20 @@ API Reference
     furst
 
 
+Reports
+=======
+
+Jupyter notebook investigations which inform the design and operation of the
+instrument.
+
+.. toctree::
+    :maxdepth: 1
+
+    reports/atmospheric-transmission
+
+|
+
+
 Bibliography
 ============
 
