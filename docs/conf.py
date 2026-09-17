@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinxcontrib.bibtex',
     'jupyter_sphinx',
+    'nbsphinx',
     'sphinx_favicon',
 ]
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
@@ -53,7 +54,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # This pattern also affects html_static_path and html_extra_path.
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -101,6 +102,8 @@ favicons = [
 
 # https://github.com/readthedocs/readthedocs.org/issues/2569
 master_doc = 'index'
+
+nbsphinx_execute = 'always'
 
 bibtex_bibfiles = ['refs.bib']
 bibtex_default_style = 'plain'

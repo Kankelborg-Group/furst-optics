@@ -21,6 +21,14 @@ This package is published to PyPI and can be installed using pip:
 
     pip install furst-optics
 
+Reports
+=======
+
+.. toctree::
+    :maxdepth: 2
+
+    reports/design
+
 API Reference
 =============
 
