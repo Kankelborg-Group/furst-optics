@@ -115,14 +115,14 @@ def _aperture_height(
     return (height_sensor + 2 * (astigmatism + margin)).to(u.mm)
 
 
-def design(
+def design_proposed(
     num_wavelength: int = 3,
     num_field: int = 10,
     num_pupil: int = 10,
 ) -> "furst.instruments.Instrument":
     """
-    The FURST optical design of Courrier, Kankelborg, and Kobayashi (2019),
-    `cck_2019` in the original design study.
+    The FURST optical design proposed by Courrier, Kankelborg, and
+    Kobayashi (2019), `cck_2019` in the original design study.
 
     Every parameter of the original design is reproduced here, expressed in
     a global coordinate system centered on the Rowland circle.
@@ -139,34 +139,9 @@ def design(
     num_pupil
         The number of samples along each axis of the pupil.
 
-    Examples
+    See Also
     --------
-
-    Plot the layout of the instrument.
-
-    .. jupyter-execute::
-
-        import matplotlib.pyplot as plt
-        import astropy.visualization
-        import furst
-
-        instrument = furst.instruments.design(
-            num_field=3,
-            num_pupil=3,
-        )
-
-        with astropy.visualization.quantity_support():
-            fig, ax = plt.subplots(constrained_layout=True)
-            instrument.system.plot(
-                ax=ax,
-                components=("z", "x"),
-                color="black",
-                kwargs_rays=dict(
-                    color="tab:blue",
-                    linewidth=0.5,
-                ),
-            )
-            ax.set_aspect("equal")
+    :func:`design`: The final design, adjusted for the grating as delivered.
     """
 
     num_channels = 7
@@ -318,3 +293,117 @@ def design(
     )
 
     return result
+
+
+def design(
+    num_wavelength: int = 3,
+    num_field: int = 10,
+    num_pupil: int = 10,
+) -> "furst.instruments.Instrument":
+    """
+    The final FURST optical design, `zeiss_r1354mm` in the original design
+    study.
+
+    This is the design of :func:`design_proposed` adjusted for the grating
+    delivered by Zeiss, which has a radius of curvature of 1354 mm instead
+    of the 1350 mm originally specified.
+    The Rowland circle grows to match the new grating, and the feed optics,
+    the grating, and the sensor each move along the circle so as to keep
+    their distance from the axis of the instrument.
+    The heights of the grating and the feed optic are kept from the
+    proposed design, as in the original study.
+
+    Parameters
+    ----------
+    num_wavelength
+        The number of wavelengths to sample in each channel.
+    num_field
+        The number of samples along each axis of the field of view.
+    num_pupil
+        The number of samples along each axis of the pupil.
+
+    Examples
+    --------
+
+    Plot the layout of the instrument.
+
+    .. jupyter-execute::
+
+        import matplotlib.pyplot as plt
+        import astropy.visualization
+        import furst
+
+        instrument = furst.instruments.design(
+            num_field=3,
+            num_pupil=3,
+        )
+
+        with astropy.visualization.quantity_support():
+            fig, ax = plt.subplots(constrained_layout=True)
+            instrument.system.plot(
+                ax=ax,
+                components=("z", "x"),
+                color="black",
+                kwargs_rays=dict(
+                    color="tab:blue",
+                    linewidth=0.5,
+                ),
+            )
+            ax.set_aspect("equal")
+    """
+
+    result = design_proposed(
+        num_wavelength=num_wavelength,
+        num_field=num_field,
+        num_pupil=num_pupil,
+    )
+
+    radius_grating = 1354 * u.mm
+    rowland_radius = radius_grating / 2
+    rowland_radius_proposed = result.grating.rowland_radius
+
+    def rowland_azimuth(azimuth_proposed: u.Quantity | na.AbstractScalar):
+        """
+        The azimuth on the new Rowland circle which keeps the distance
+        from the axis of the instrument the same as on the proposed one.
+        """
+        x = rowland_radius_proposed * np.sin(azimuth_proposed)
+        return np.arcsin(x / rowland_radius).to(u.deg)
+
+    feed_optic = dataclasses.replace(
+        result.feed_optic,
+        twist=0 * u.deg,
+        rowland_radius=rowland_radius,
+        rowland_azimuth=rowland_azimuth(result.feed_optic.rowland_azimuth),
+    )
+
+    grating = dataclasses.replace(
+        result.grating,
+        sag=dataclasses.replace(
+            result.grating.sag,
+            radius=-radius_grating,
+        ),
+        rowland_radius=rowland_radius,
+        rowland_azimuth=180 * u.deg - rowland_azimuth(result.grating.rowland_azimuth),
+    )
+
+    sensor = dataclasses.replace(
+        result.camera.sensor,
+        rowland_radius=rowland_radius,
+        rowland_azimuth=rowland_azimuth(result.camera.sensor.rowland_azimuth),
+    )
+
+    feed_optic = dataclasses.replace(
+        feed_optic,
+        twist=_twist(feed_optic, grating),
+    )
+
+    return dataclasses.replace(
+        result,
+        feed_optic=feed_optic,
+        grating=grating,
+        camera=dataclasses.replace(
+            result.camera,
+            sensor=sensor,
+        ),
+    )
