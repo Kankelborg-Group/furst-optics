@@ -2,6 +2,7 @@ import dataclasses
 import numpy as np
 import astropy.units as u
 import named_arrays as na
+import sunpy.sun.constants
 import optika
 import furst
 
@@ -114,26 +115,90 @@ def _aperture_height(
     return (height_sensor + 2 * (astigmatism + margin)).to(u.mm)
 
 
-def design():
+def design(
+    num_wavelength: int = 3,
+    num_field: int = 10,
+    num_pupil: int = 10,
+) -> "furst.instruments.Instrument":
     """
-    The FURST design of Courrier, Kankelborg, and Kobayashi (2019),
-    `cck_2019` of the original design study.
+    The FURST optical design of Courrier, Kankelborg, and Kobayashi (2019),
+    `cck_2019` in the original design study.
+
+    Every parameter of the original design is reproduced here, expressed in
+    a global coordinate system centered on the Rowland circle.
+    The one exception is the sensor, which is the Teledyne CCD230-42 model
+    from :mod:`msfc_ccd` (2048 x 1032 active pixels) in place of the
+    2048 x 1040 pixels assumed by the original.
+
+    Parameters
+    ----------
+    num_wavelength
+        The number of wavelengths to sample in each channel.
+    num_field
+        The number of samples along each axis of the field of view.
+    num_pupil
+        The number of samples along each axis of the pupil.
+
+    Examples
+    --------
+
+    Plot the layout of the instrument.
+
+    .. jupyter-execute::
+
+        import matplotlib.pyplot as plt
+        import astropy.visualization
+        import furst
+
+        instrument = furst.instruments.design(
+            num_field=3,
+            num_pupil=3,
+        )
+
+        with astropy.visualization.quantity_support():
+            fig, ax = plt.subplots(constrained_layout=True)
+            instrument.system.plot(
+                ax=ax,
+                components=("z", "x"),
+                color="black",
+                kwargs_rays=dict(
+                    color="tab:blue",
+                    linewidth=0.5,
+                ),
+            )
+            ax.set_aspect("equal")
     """
 
     num_channels = 7
     f_ratio = 7.5
+    axis_channel = "channel"
 
-    # The instrument is laid out on a breadboard, which sets where the Sun
-    # and the front aperture sit along the axis.
+    # The original design was laid out on a breadboard, with its
+    # coordinate system centered on the breadboard and the Rowland circle
+    # offset from it. Here the coordinate system is centered on the Rowland
+    # circle instead, so everything referenced to the breadboard is shifted
+    # by the opposite of that offset.
     length_breadboard = (95 * u.imperial.inch).to(u.mm)
     z_breadboard = -length_breadboard / 2
+    center_rowland = na.Cartesian3dVectorArray(
+        x=-7.125 * u.imperial.inch,
+        y=3.176 * u.imperial.inch,
+        z=2 * u.imperial.inch,
+    ).to(u.mm)
+
+    # The field of view is sized for the largest apparent radius of the Sun,
+    # while the astigmatism of the grating was sized for its mean radius.
+    radius_sun_max = (32 * u.arcmin + 32 * u.arcsec) / 2
+    radius_sun_mean = sunpy.sun.constants.average_angular_size
 
     source = furst.sources.SolarDisk(
-        translation=na.Cartesian3dVectorArray(0, 0, 1) * (-100 * u.mm + z_breadboard),
+        radius=radius_sun_max,
+        translation=na.Cartesian3dVectorArray(0, 0, 1) * (-100 * u.mm + z_breadboard)
+        - center_rowland,
     )
 
     front_aperture = furst.apertures.FrontAperture(
-        translation=na.Cartesian3dVectorArray(0, 0, 1) * z_breadboard,
+        translation=na.Cartesian3dVectorArray(0, 0, 1) * z_breadboard - center_rowland,
     )
 
     # The sensor sits on the Rowland circle a little off the axis of the
@@ -157,7 +222,7 @@ def design():
     )
     height_sensor = (sensor.num_pixel_active.y * sensor.width_pixel).to(u.mm)
 
-    height_clear_grating = height_sensor + 2 * radius_grating * np.tan(source.radius)
+    height_clear_grating = height_sensor + 2 * radius_grating * np.tan(radius_sun_max)
 
     grating = furst.gratings.Grating(
         sag=optika.sags.SphericalSag(
@@ -171,7 +236,11 @@ def design():
             x=190 * u.mm,
             y=60 * u.mm,
         ),
-        material=optika.materials.Mirror(),
+        material=optika.materials.Mirror(
+            substrate=optika.materials.Layer(
+                thickness=35 * u.mm,
+            ),
+        ),
         rulings=optika.rulings.Rulings(
             spacing=1 / (2200 / u.mm),
             diffraction_order=1,
@@ -185,15 +254,21 @@ def design():
     rowland_azimuth_feed = na.linspace(
         start=rowland_azimuth_sensor + 11 * u.deg,
         stop=rowland_azimuth_sensor + 11 * u.deg + 15 * u.deg,
-        axis="channel",
+        axis=axis_channel,
         num=num_channels,
     )
 
+    # The feed optic is a solid rod, so its substrate is as thick as its
+    # radius.
     radius_feed = 3 * u.mm
     feed_optic = furst.feed_optics.FeedOptic(
         radius=radius_feed,
         aperture_subtent=45 * u.deg,
-        material=optika.materials.Mirror(),
+        material=optika.materials.Mirror(
+            substrate=optika.materials.Layer(
+                thickness=radius_feed,
+            ),
+        ),
         margin_polishing=radius_feed,
         margin_mounting=3 * (2 * radius_feed),
         rowland_radius=rowland_radius,
@@ -201,9 +276,15 @@ def design():
     )
     feed_optic = dataclasses.replace(
         feed_optic,
-        aperture_height=_aperture_height(feed_optic, grating, sensor, source.radius),
+        aperture_height=_aperture_height(feed_optic, grating, sensor, radius_sun_mean),
         twist=_twist(feed_optic, grating),
     )
+
+    # The default wavelength grid stops short of the edges of the sensor by
+    # a margin of pixels, so the traced spectrum lands inside the sensor
+    # with room to spare.
+    num_pixel_margin = 50
+    inset_wavelength = 1 - 2 * num_pixel_margin / sensor.num_pixel_active.x
 
     result = furst.instruments.Instrument(
         name="furst",
@@ -214,19 +295,24 @@ def design():
         camera=furst.cameras.Camera(
             sensor=sensor,
         ),
-        wavelength=na.linspace(-1, 1, axis="wavelength", num=3, centers=True),
+        wavelength=na.linspace(
+            start=-inset_wavelength,
+            stop=inset_wavelength,
+            axis="wavelength",
+            num=num_wavelength,
+        ),
         field=na.Cartesian2dVectorLinearSpace(
             start=-1,
             stop=1,
             axis=na.Cartesian2dVectorArray("field_x", "field_y"),
-            num=3,
+            num=num_field,
             centers=True,
         ),
         pupil=na.Cartesian2dVectorLinearSpace(
             start=-1,
             stop=1,
             axis=na.Cartesian2dVectorArray("pupil_x", "pupil_y"),
-            num=3,
+            num=num_pupil,
             centers=True,
         ),
     )
