@@ -7,13 +7,10 @@ from furst.feed_optics import materials
 from furst.feed_optics.materials._materials import _efficiency, _witness_data
 
 
-def _rms(coating, angle, where=None):
+def _rms(coating, angle):
     """The residual of a coating against the witness measurement."""
     data = _witness_data()
-    wavelength, measured = data.inputs, data.outputs
-    if where is not None:
-        wavelength, measured = wavelength[where], measured[where]
-    residual = _efficiency(coating, wavelength, angle) - measured
+    residual = _efficiency(coating, data.inputs, angle) - data.outputs
     return float(na.as_named_array(np.sqrt(np.mean(np.square(residual)))).ndarray)
 
 
