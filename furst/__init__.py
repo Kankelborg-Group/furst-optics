@@ -10,6 +10,7 @@ from . import feed_optics
 from . import gratings
 from . import sensors
 from . import cameras
+from . import instruments
 
 __all__ = [
     "typevars",
@@ -20,4 +21,5 @@ __all__ = [
     "gratings",
     "sensors",
     "cameras",
+    "instruments",
 ]

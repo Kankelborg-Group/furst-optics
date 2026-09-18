@@ -109,6 +109,16 @@ class FeedOptic(
     The physical height of the clear aperture.
     """
 
+    twist: u.Quantity | na.AbstractScalar = 0 * u.deg
+    """
+    The rotation of the clear aperture about the vertical axis.
+
+    Since this rotation is about the center of curvature, it slides the
+    clear aperture around the curved surface rather than tilting it, and
+    so sets the direction of the reflected beam; it is what aims the beam
+    at the grating.
+    """
+
     margin_polishing: u.Quantity | na.AbstractScalar = 0 * u.mm
     """
     The height above and below the clear aperture needed to 
@@ -173,12 +183,15 @@ class FeedOptic(
         t_yaw = na.transformations.Cartesian3dRotationY(
             angle=-self.rowland_azimuth,
         )
+        t_twist = na.transformations.Cartesian3dRotationY(
+            angle=self.twist,
+        )
         t_img = na.transformations.Cartesian3dTranslation(
             x=0 * u.mm,
             y=0 * u.mm,
             z=self.radius / 2,
         )
-        return t_img @ super().transformation @ t_yaw @ t_center
+        return t_img @ super().transformation @ t_twist @ t_yaw @ t_center
 
     @property
     def transformation_image(self):
