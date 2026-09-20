@@ -36,17 +36,19 @@ reflectance_design = 0.805 * u.dimensionless_unscaled
 """
 The reflectance of the coating at :data:`wavelength_design`.
 
-:cite:t:`ActonCatalog2001` specifies 78 to 83 percent for this coating
-at normal incidence, of which this is the midpoint.
+:cite:t:`ActonCatalog2001` specifies 78 to 83 percent for this coating,
+of which this is the midpoint. That specification is quoted at
+:data:`angle_witness`.
 """
 
-width_interface = 2.7 * u.nm
+width_interface = 2.73 * u.nm
 """
 The effective width of the interfaces between the layers of the coating.
 
 A perfectly smooth quarter-wave stack would reflect about 95 percent at
 :data:`wavelength_design`, far more than the
-:data:`reflectance_design` that the vendor specifies. This width is the
+:data:`reflectance_design` that the vendor specifies at
+:data:`angle_witness`. This width is the
 one which brings the model down to that specification, and it stands in
 for everything the room-temperature process loses to roughness,
 porosity, and oxidation of the aluminum before it is over-coated. It is
@@ -74,30 +76,27 @@ The longest wavelength that :func:`coating_witness_fit` fits to.
 See :data:`wavelength_fit_min`.
 """
 
-angle_witness = 0 * u.deg
+angle_witness = 15 * u.deg
 """
 The angle of incidence at which the witness samples were measured.
 
-The geometry was not recorded, but normal incidence is both the natural
-reading and very nearly free of consequence.
+:cite:t:`ActonCoatingCurve` publishes the reflectance of this coating at
+15 degrees, which is the geometry the vendor measures it in, and the
+tabulated specification in :cite:t:`ActonCatalog2001` describes the same
+measurement as near normal incidence.
 
-:cite:t:`ActonCatalog2001` quotes this coating at normal incidence, and
-the sample reads 81.5 percent at 120 nm, inside the 78 to 83 percent
-specified there. More importantly, the reflectance barely depends on the
-angle over the range that matters: between normal incidence and the 4.6
-degrees at which the feed optics are actually used, the mean reflectance
-across the bandpass moves by 0.04 percentage points, against a
-measurement noise of 0.18.
+The value matters very little in any case. Between this angle and the
+4.6 degrees at which the feed optics are actually used, the mean
+reflectance across the bandpass moves by 0.33 percentage points, and
+between 15 degrees and normal it moves by less still.
 
-Fitting this angle instead of fixing it drives it to about 70 degrees,
+Fitting this angle rather than fixing it drives it to about 70 degrees,
 which is not a real geometry. A smooth two-layer model of this coating
-reflects about 95 percent at :data:`wavelength_design`, some 13 points
-above both the measurement and the vendor's own specification, and a
-steep angle is the only parameter in such a model that can suppress the
-far ultraviolet while leaving the visible high. The fitted angle absorbs
-that error rather than measuring anything, so the geometry cannot be
-inferred from a model which is known to be wrong by far more than the
-effect being inferred.
+reflects about 95 percent at :data:`wavelength_design`, far above both
+the measurement and the vendor's specification, and a steep angle is the
+only parameter in such a model that can suppress the far ultraviolet
+while leaving the visible high. The fitted angle absorbs that error
+rather than measuring anything.
 """
 
 
@@ -132,8 +131,8 @@ def coating_design() -> optika.materials.MultilayerMirror:
     quarter wave of magnesium fluoride at :data:`wavelength_design`, over
     aluminum thick enough to be opaque, with the interfaces broadened by
     :data:`width_interface` so that the stack reflects the
-    :data:`reflectance_design` that :cite:t:`ActonCatalog2001`
-    specifies.
+    :data:`reflectance_design` that :cite:t:`ActonCatalog2001` specifies
+    at :data:`angle_witness`.
 
     The vendor publishes two numbers about this coating, the wavelength
     it is optimized for and its reflectance there, and this model has
@@ -246,11 +245,18 @@ def coating_witness_measured() -> optika.materials.MeasuredMirror:
     A reflectivity measurement of the witness samples to the
     feed optics.
 
-    The measurement is taken to be at :data:`angle_witness`, since
-    :cite:t:`ActonCatalog2001` quotes the reflectance of this coating at
-    normal incidence. The measured reflectance at 120 and 125 nm, 81.5
-    and 83.2 percent, falls inside the 78 to 83 percent that the vendor
-    specifies at 121.6 nm, which supports that reading.
+    The geometry of the measurement was not recorded, so it is taken to
+    be :data:`angle_witness`, the angle at which the vendor measures
+    this coating.
+
+    Note that this sample is not identical to the vendor's nominal
+    curve. Its interference features sit about 25 nm blue of the
+    published ones, a maximum at 130 nm against 150 and a minimum at
+    150 nm against 177, which implies that this coating run came out
+    with a magnesium fluoride layer some 15 percent thinner than
+    nominal. It is also several points more reflective through the near
+    ultraviolet. This is the reason to use the measurement rather than
+    the published curve.
 
     Examples
     --------
