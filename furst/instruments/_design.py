@@ -234,16 +234,21 @@ def design_proposed(
     )
 
     # The feed optic is a solid rod, so its substrate is as thick as its
-    # radius.
+    # radius. It carries the coating measured on the witness samples that
+    # were coated alongside it.
     radius_feed = 3 * u.mm
+    material_feed = furst.feed_optics.materials.coating_witness_measured()
+    material_feed = dataclasses.replace(
+        material_feed,
+        substrate=dataclasses.replace(
+            material_feed.substrate,
+            thickness=radius_feed,
+        ),
+    )
     feed_optic = furst.feed_optics.FeedOptic(
         radius=radius_feed,
         aperture_subtent=45 * u.deg,
-        material=optika.materials.Mirror(
-            substrate=optika.materials.Layer(
-                thickness=radius_feed,
-            ),
-        ),
+        material=material_feed,
         margin_polishing=radius_feed,
         margin_mounting=3 * (2 * radius_feed),
         rowland_radius=rowland_radius,

@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import astropy.units as u
 import named_arrays as na
+import optika
 import furst
 
 
@@ -28,7 +29,13 @@ def test_design(func, rowland_radius: u.Quantity):
     assert result.camera.sensor.rowland_radius == result.grating.rowland_radius
     assert result.feed_optic.rowland_radius == result.grating.rowland_radius
 
-    # every channel lands on the sensor
+    # the measured coating is on the feed optic
+    assert isinstance(result.feed_optic.material, optika.materials.MeasuredMirror)
+
+    # every channel lands on the sensor, and the coating has cost it
+    # some light
     rays = result.system.rayfunction_default
     assert np.isfinite(rays.outputs.position.x).all()
-    assert (na.nominal(rays.outputs.intensity).mean("wavelength") > 0).all()
+    intensity = na.nominal(rays.outputs.intensity)
+    assert (intensity.mean("wavelength") > 0).all()
+    assert (intensity < 1).all()

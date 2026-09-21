@@ -5,6 +5,16 @@ import astropy.units as u
 import named_arrays as na
 import optika
 
+# defined in the package __init__ so that Sphinx documents them
+from . import (
+    wavelength_design,
+    thickness_aluminum,
+    width_interface,
+    wavelength_fit_min,
+    wavelength_fit_max,
+    angle_witness,
+)
+
 __all__ = [
     "coating_design",
     "coating_witness_measured",
@@ -12,13 +22,51 @@ __all__ = [
 ]
 
 
+def _thickness_quarter_wave(
+    chemical: optika.chemicals.AbstractChemical,
+    wavelength: u.Quantity,
+) -> u.Quantity:
+    """
+    The thickness of a quarter-wave layer of the given chemical.
+
+    Parameters
+    ----------
+    chemical
+        The material of the layer.
+    wavelength
+        The wavelength at which the layer is a quarter of a wave thick.
+    """
+    # the index comes back as a named array, and a layer thickness is a
+    # plain quantity
+    index = na.as_named_array(np.real(chemical.n(wavelength))).ndarray
+    return (wavelength / (4 * index)).to(u.nm)
+
+
 def coating_design() -> optika.materials.MultilayerMirror:
     """
-    The as-designed coating for the FURST feed optics, Acton Optics
+    The as-designed coating for the FURST feed optics, similar to Acton
     broadband VUV coating #1200.
 
-    Since we presumably don't know the formula of this proprietary
-    coating, this function uses the formula in :cite:t:`Quijada2012`.
+    This is a conventional aluminum mirror protected by magnesium
+    fluoride. Since the recipe is proprietary, this function models it as
+    the simplest coating consistent with what the vendor publishes: a
+    quarter wave of magnesium fluoride at :data:`wavelength_design`, over
+    aluminum thick enough to be opaque, with the interfaces broadened by
+    :data:`width_interface` so that the stack reflects the
+    :data:`reflectance_design` that :cite:t:`ActonCatalog2001` specifies
+    at :data:`angle_witness`.
+
+    The vendor publishes two numbers about this coating, the wavelength
+    it is optimized for and its reflectance there, and this model has
+    two free parameters, so it is determined rather than fitted. The
+    thickness it implies agrees with the one
+    :func:`coating_witness_fit` recovers independently from the witness
+    sample.
+
+    Note that this is *not* the enhanced coating of
+    :cite:t:`Quijada2012`, whose magnesium fluoride is deposited on a
+    heated substrate and which reaches above 90 percent at 121.6 nm. The
+    feed optics carry the conventional room-temperature coating.
 
     Examples
     --------
@@ -70,12 +118,19 @@ def coating_design() -> optika.materials.MultilayerMirror:
         ax.set_ylabel("reflectivity");
         ax.legend(title="incidence angle");
     """
+    magnesium_fluoride = optika.chemicals.Chemical("MgF2")
+
     return optika.materials.MultilayerMirror(
         layers=[
             optika.materials.Layer(
-                chemical="MgF2",
-                thickness=25 * u.nm,
-                interface=optika.materials.profiles.ErfInterfaceProfile(1 * u.nm),
+                chemical=magnesium_fluoride,
+                thickness=_thickness_quarter_wave(
+                    chemical=magnesium_fluoride,
+                    wavelength=wavelength_design,
+                ),
+                interface=optika.materials.profiles.ErfInterfaceProfile(
+                    width_interface,
+                ),
                 kwargs_plot=dict(
                     color="tab:blue",
                     alpha=0.3,
@@ -83,8 +138,10 @@ def coating_design() -> optika.materials.MultilayerMirror:
             ),
             optika.materials.Layer(
                 chemical="Al",
-                thickness=60 * u.nm,
-                interface=optika.materials.profiles.ErfInterfaceProfile(1 * u.nm),
+                thickness=thickness_aluminum,
+                interface=optika.materials.profiles.ErfInterfaceProfile(
+                    width_interface,
+                ),
                 kwargs_plot=dict(
                     color="tab:blue",
                     alpha=0.5,
@@ -94,7 +151,9 @@ def coating_design() -> optika.materials.MultilayerMirror:
         substrate=optika.materials.Layer(
             chemical="SiO2",
             thickness=3 * u.mm,
-            interface=optika.materials.profiles.ErfInterfaceProfile(1 * u.nm),
+            interface=optika.materials.profiles.ErfInterfaceProfile(
+                width_interface,
+            ),
             kwargs_plot=dict(
                 color="gray",
                 alpha=0.5,
@@ -108,8 +167,18 @@ def coating_witness_measured() -> optika.materials.MeasuredMirror:
     A reflectivity measurement of the witness samples to the
     feed optics.
 
-    This function assumes that the angle of incidence is 75 degrees from the normal.
-    This is just a guess and will have to be updated with better information.
+    The geometry of the measurement was not recorded, so it is taken to
+    be :data:`angle_witness`, the angle at which the vendor measures
+    this coating.
+
+    Note that this sample is not identical to the vendor's nominal
+    curve. Its interference features sit about 25 nm blue of the
+    published ones, a maximum at 130 nm against 150 and a minimum at
+    150 nm against 177, which implies that this coating run came out
+    with a magnesium fluoride layer some 15 percent thinner than
+    nominal. It is also several points more reflective through the near
+    ultraviolet. This is the reason to use the measurement rather than
+    the published curve.
 
     Examples
     --------
@@ -184,7 +253,7 @@ def coating_witness_measured() -> optika.materials.MeasuredMirror:
         efficiency_measured=na.FunctionArray(
             inputs=na.SpectralDirectionalVectorArray(
                 wavelength=wavelength,
-                direction=75 * u.deg,
+                direction=angle_witness,
             ),
             outputs=reflectivity.to(u.dimensionless_unscaled),
         ),
@@ -199,6 +268,25 @@ def coating_witness_measured() -> optika.materials.MeasuredMirror:
 def coating_witness_fit() -> optika.materials.MultilayerMirror:
     """
     A coating fitted to the :func:`coating_witness_measured` measurement.
+
+    For radiometry, prefer :func:`coating_witness_measured` itself, which
+    interpolates the measured reflectance directly. This fit is a smooth
+    two-layer stand-in for a proprietary coating and cannot reproduce the
+    measurement to better than about 1.5 percentage points across the
+    bandpass, against a measurement noise of 0.18. It is useful for
+    extrapolating outside the measured wavelengths, and for comparing
+    against :func:`coating_design`, but it does not improve on the
+    measurement where the measurement exists.
+
+    The thickness of the magnesium fluoride and the width of the
+    interfaces are fitted, over the wavelengths between
+    :data:`wavelength_fit_min` and :data:`wavelength_fit_max`.
+
+    The thickness of the aluminum is not fitted, since aluminum is
+    opaque in this wavelength range and the measurement cannot constrain
+    it. Fitting it anyway admits a second, unphysical solution with
+    semi-transparent aluminum, which fits the far ultraviolet slightly
+    better at the cost of the visible.
 
     Examples
     --------
@@ -267,11 +355,16 @@ def coating_witness_fit() -> optika.materials.MultilayerMirror:
     measurement = coating_witness_measured()
     unit = u.nm
 
-    reflectivity = measurement.efficiency_measured.outputs
+    wavelength = measurement.efficiency_measured.inputs.wavelength
     angle_incidence = measurement.efficiency_measured.inputs.direction
 
+    # only the wavelengths the instrument actually uses
+    where = (wavelength > wavelength_fit_min) & (wavelength < wavelength_fit_max)
+    wavelength = wavelength[where]
+    reflectivity = measurement.efficiency_measured.outputs[where]
+
     rays = optika.rays.RayVectorArray(
-        wavelength=measurement.efficiency_measured.inputs.wavelength,
+        wavelength=wavelength,
         direction=na.Cartesian3dVectorArray(
             x=np.sin(angle_incidence),
             y=0,
@@ -283,12 +376,10 @@ def coating_witness_fit() -> optika.materials.MultilayerMirror:
 
     def _coating(
         thickness_MgF2: float,
-        thickness_Al: float,
         width_interface: float,
     ):
         result = coating_design()
         result.layers[0].thickness = thickness_MgF2 * unit
-        result.layers[1].thickness = thickness_Al * unit
         result.layers[0].interface.width = width_interface * unit
         result.layers[1].interface.width = width_interface * unit
         result.substrate.interface.width = width_interface * unit
@@ -312,11 +403,9 @@ def coating_witness_fit() -> optika.materials.MultilayerMirror:
         fun=_func,
         x0=[
             design.layers[0].thickness.to_value(unit),
-            design.layers[1].thickness.to_value(unit),
             design.substrate.interface.width.to_value(unit),
         ],
         bounds=[
-            (0, None),
             (0, None),
             (0, None),
         ],
