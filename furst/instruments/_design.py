@@ -199,6 +199,17 @@ def design_proposed(
 
     height_clear_grating = height_sensor + 2 * radius_grating * np.tan(radius_sun_max)
 
+    # The grating carries the coating Zeiss measured on a test piece before
+    # coating it, over a fused silica substrate.
+    material_grating = furst.gratings.materials.coating_measured()
+    material_grating = dataclasses.replace(
+        material_grating,
+        substrate=dataclasses.replace(
+            material_grating.substrate,
+            thickness=35 * u.mm,
+        ),
+    )
+
     grating = furst.gratings.Grating(
         sag=optika.sags.SphericalSag(
             radius=-radius_grating,
@@ -211,11 +222,7 @@ def design_proposed(
             x=190 * u.mm,
             y=60 * u.mm,
         ),
-        material=optika.materials.Mirror(
-            substrate=optika.materials.Layer(
-                thickness=35 * u.mm,
-            ),
-        ),
+        material=material_grating,
         rulings=optika.rulings.Rulings(
             spacing=1 / (2200 / u.mm),
             diffraction_order=1,
@@ -234,16 +241,21 @@ def design_proposed(
     )
 
     # The feed optic is a solid rod, so its substrate is as thick as its
-    # radius.
+    # radius. It carries the coating measured on the witness samples that
+    # were coated alongside it.
     radius_feed = 3 * u.mm
+    material_feed = furst.feed_optics.materials.coating_witness_measured()
+    material_feed = dataclasses.replace(
+        material_feed,
+        substrate=dataclasses.replace(
+            material_feed.substrate,
+            thickness=radius_feed,
+        ),
+    )
     feed_optic = furst.feed_optics.FeedOptic(
         radius=radius_feed,
         aperture_subtent=45 * u.deg,
-        material=optika.materials.Mirror(
-            substrate=optika.materials.Layer(
-                thickness=radius_feed,
-            ),
-        ),
+        material=material_feed,
         margin_polishing=radius_feed,
         margin_mounting=3 * (2 * radius_feed),
         rowland_radius=rowland_radius,
