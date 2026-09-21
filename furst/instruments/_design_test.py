@@ -29,13 +29,16 @@ def test_design(func, rowland_radius: u.Quantity):
     assert result.camera.sensor.rowland_radius == result.grating.rowland_radius
     assert result.feed_optic.rowland_radius == result.grating.rowland_radius
 
-    # the measured coating is on the feed optic
+    # the measured coatings are on the feed optic and the grating, and the
+    # grating has the simulated groove efficiency
     assert isinstance(result.feed_optic.material, optika.materials.MeasuredMirror)
+    assert isinstance(result.grating.material, optika.materials.MeasuredMirror)
+    assert isinstance(result.grating.rulings, optika.rulings.MeasuredRulings)
 
-    # every channel lands on the sensor, and the coating has cost it
-    # some light
+    # every channel lands on the sensor, and the coatings and rulings have
+    # cost it most of the light
     rays = result.system.rayfunction_default
     assert np.isfinite(rays.outputs.position.x).all()
     intensity = na.nominal(rays.outputs.intensity)
     assert (intensity.mean("wavelength") > 0).all()
-    assert (intensity < 1).all()
+    assert (intensity < 0.5).all()
