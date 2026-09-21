@@ -199,17 +199,6 @@ def design_proposed(
 
     height_clear_grating = height_sensor + 2 * radius_grating * np.tan(radius_sun_max)
 
-    # The grating carries the coating Zeiss measured on a test piece before
-    # coating it, over a fused silica substrate.
-    material_grating = furst.gratings.materials.coating_measured()
-    material_grating = dataclasses.replace(
-        material_grating,
-        substrate=dataclasses.replace(
-            material_grating.substrate,
-            thickness=35 * u.mm,
-        ),
-    )
-
     grating = furst.gratings.Grating(
         sag=optika.sags.SphericalSag(
             radius=-radius_grating,
@@ -222,7 +211,11 @@ def design_proposed(
             x=190 * u.mm,
             y=60 * u.mm,
         ),
-        material=material_grating,
+        material=optika.materials.Mirror(
+            substrate=optika.materials.Layer(
+                thickness=35 * u.mm,
+            ),
+        ),
         rulings=optika.rulings.Rulings(
             spacing=1 / (2200 / u.mm),
             diffraction_order=1,
