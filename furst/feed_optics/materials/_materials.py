@@ -44,8 +44,8 @@ def _thickness_quarter_wave(
 
 def coating_design() -> optika.materials.MultilayerMirror:
     """
-    The as-designed coating for the FURST feed optics, Acton broadband
-    VUV coating #1200.
+    The as-designed coating for the FURST feed optics, similar to Acton
+    broadband VUV coating #1200.
 
     This is a conventional aluminum mirror protected by magnesium
     fluoride. Since the recipe is proprietary, this function models it as

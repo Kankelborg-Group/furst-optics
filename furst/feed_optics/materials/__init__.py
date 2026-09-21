@@ -30,8 +30,8 @@ wavelength_design = 121.6 * u.nm
 The wavelength that the coating on the feed optics is optimized for,
 hydrogen Lyman :math:`\\alpha`.
 
-The coating is Acton broadband VUV coating #1200, whose reflectance
-:cite:t:`ActonCatalog2001` specifies at this wavelength.
+The coating is similar to Acton broadband VUV coating #1200, whose
+reflectance :cite:t:`ActonCatalog2001` specifies at this wavelength.
 """
 
 reflectance_design = 0.805 * u.dimensionless_unscaled
