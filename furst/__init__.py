@@ -10,6 +10,7 @@ from . import feed_optics
 from . import gratings
 from . import sensors
 from . import cameras
+from . import filters
 from . import instruments
 
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "gratings",
     "sensors",
     "cameras",
+    "filters",
     "instruments",
 ]

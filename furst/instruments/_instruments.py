@@ -79,6 +79,13 @@ class Instrument(
     or in physical coordinates (with units of length).
     """
 
+    filter: None | furst.filters.Filter = None
+    """
+    A model of the visible-blind filter in front of the sensor.
+
+    If :obj:`None`, no filter is modeled.
+    """
+
     pitch: u.Quantity | na.AbstractScalar = 0 * u.deg
     """
     Rotation about the vector perpendicular to the optic axis and the
@@ -211,12 +218,16 @@ class Instrument(
             pupil=self.pupil,
         )
 
+        surfaces = [
+            self.front_aperture.surface,
+            self.feed_optic.surface,
+            self.grating.surface,
+        ]
+        if self.filter is not None:
+            surfaces += self.filter.surfaces
+
         return optika.systems.SequentialSystem(
-            surfaces=[
-                self.front_aperture.surface,
-                self.feed_optic.surface,
-                self.grating.surface,
-            ],
+            surfaces=surfaces,
             object=self.source.surface,
             sensor=self.camera.surface,
             grid_input=grid,

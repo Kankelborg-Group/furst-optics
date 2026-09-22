@@ -35,10 +35,20 @@ def test_design(func, rowland_radius: u.Quantity):
     assert isinstance(result.grating.material, optika.materials.MeasuredMirror)
     assert isinstance(result.grating.rulings, optika.rulings.MeasuredRulings)
 
-    # every channel lands on the sensor, and the coatings and rulings have
-    # cost it most of the light
+    # the visible-blind filter is a coated magnesium fluoride window on the
+    # camera head, and the sensor and filter have been moved back together
+    # to compensate for the focus shift of the window
+    assert isinstance(result.filter.material, optika.materials.MeasuredFilter)
+    assert isinstance(result.filter.material.medium, optika.materials.Dielectric)
+    assert result.filter.rowland_radius == result.camera.sensor.rowland_radius
+    assert result.filter.rowland_azimuth == result.camera.sensor.rowland_azimuth
+    assert 0.5 * u.mm < result.camera.sensor.translation.z < 0.9 * u.mm
+    assert result.filter.translation == result.camera.sensor.translation
+
+    # every channel lands on the sensor, and the coatings, rulings, and
+    # filter have cost it most of the light
     rays = result.system.rayfunction_default
     assert np.isfinite(rays.outputs.position.x).all()
     intensity = na.nominal(rays.outputs.intensity)
     assert (intensity.mean("wavelength") > 0).all()
-    assert (intensity < 0.5).all()
+    assert (intensity < 0.1).all()

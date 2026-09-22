@@ -269,6 +269,23 @@ def design_proposed(
         twist=_twist(feed_optic, grating),
     )
 
+    # The visible-blind filter is a coated magnesium fluoride window on the
+    # camera head, square to the sensor. Where exactly it sits on the head
+    # is not recorded, so it is placed two inches in front of the sensor,
+    # as the original mechanical placeholder and the pinhole study of the
+    # filter both assumed. The whole two-inch window is taken to be clear,
+    # and its thickness is the mean of the two windows that were measured,
+    # since which of them flew is not recorded either.
+    blind_filter = furst.filters.Filter(
+        material=furst.filters.materials.transmission_witness_measured(),
+        thickness=furst.filters.thickness_measured.mean(),
+        radius_clear=25.4 * u.mm,
+        radius_mech=25.4 * u.mm,
+        distance=(2 * u.imperial.inch).to(u.mm),
+        rowland_radius=rowland_radius,
+        rowland_azimuth=rowland_azimuth_sensor,
+    )
+
     # The default wavelength grid stops short of the edges of the sensor by
     # a margin of pixels, so the traced spectrum lands inside the sensor
     # with room to spare.
@@ -284,6 +301,7 @@ def design_proposed(
         camera=furst.cameras.Camera(
             sensor=sensor,
         ),
+        filter=blind_filter,
         wavelength=na.linspace(
             start=-inset_wavelength,
             stop=inset_wavelength,
@@ -303,6 +321,30 @@ def design_proposed(
             axis=na.Cartesian2dVectorArray("pupil_x", "pupil_y"),
             num=num_pupil,
             centers=True,
+        ),
+    )
+
+    # The window moves the focus away from the grating by an amount that
+    # depends on wavelength through the dispersion of magnesium fluoride,
+    # so the sensor, and the filter mounted with it, are moved back by the
+    # shift at the middle of the wavelength range, which splits the
+    # difference between the channels.
+    wavelength_focus = (result.wavelength_min.min() + result.wavelength_max.max()) / 2
+    translation_focus = na.Cartesian3dVectorArray(0, 0, 1) * blind_filter.focus_shift(
+        wavelength_focus
+    )
+    result = dataclasses.replace(
+        result,
+        filter=dataclasses.replace(
+            blind_filter,
+            translation=translation_focus,
+        ),
+        camera=dataclasses.replace(
+            result.camera,
+            sensor=dataclasses.replace(
+                sensor,
+                translation=translation_focus,
+            ),
         ),
     )
 
@@ -407,6 +449,12 @@ def design(
         rowland_azimuth=rowland_azimuth(result.camera.sensor.rowland_azimuth),
     )
 
+    blind_filter = dataclasses.replace(
+        result.filter,
+        rowland_radius=rowland_radius,
+        rowland_azimuth=rowland_azimuth(result.filter.rowland_azimuth),
+    )
+
     feed_optic = dataclasses.replace(
         feed_optic,
         twist=_twist(feed_optic, grating),
@@ -420,4 +468,5 @@ def design(
             result.camera,
             sensor=sensor,
         ),
+        filter=blind_filter,
     )
