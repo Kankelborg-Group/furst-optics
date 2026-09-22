@@ -6,6 +6,9 @@ import sunpy.sun.constants
 import optika
 import furst
 
+# defined in the package __init__ so that Sphinx documents them
+from . import translation_focus, angle_focus
+
 
 def _twist(
     feed_optic: furst.feed_optics.FeedOptic,
@@ -162,6 +165,11 @@ def design_proposed(
         The number of samples along each axis of the field of view.
     num_pupil
         The number of samples along each axis of the pupil.
+
+    Note that this design is not focused: the visible-blind filter in front
+    of the sensor moves the focus behind it, and the instrument was only
+    focused once it had been assembled.
+    See :func:`design`, which is.
 
     See Also
     --------
@@ -352,10 +360,8 @@ def design_proposed(
 
     # The window moves the focus away from the grating by 0.6 to 0.8 mm,
     # depending on wavelength through the dispersion of magnesium fluoride.
-    # Nothing here compensates for that. The flight instrument was focused
-    # with the filter in place by moving the feed optic array, which this
-    # model does not yet reproduce, so the sensor stays on the Rowland
-    # circle and the trace shows the defocus of the window.
+    # Nothing here compensates for that; this is the design as proposed,
+    # before the instrument was built and focused.
 
     return result
 
@@ -377,6 +383,12 @@ def design(
     their distance from the axis of the instrument.
     The heights of the grating and the feed optic are kept from the
     proposed design, as in the original study.
+
+    The feed optic array is moved to the position which focuses the
+    instrument, :data:`translation_focus` and :data:`angle_focus`, since
+    the instrument was focused after it was assembled and with the
+    visible-blind filter in place.
+    See :func:`focus`, which finds those positions.
 
     Parameters
     ----------
@@ -465,9 +477,16 @@ def design(
         yaw=_angle_beam(grating, sensor),
     )
 
+    # Once assembled, the instrument was focused by moving the feed optic
+    # array, which is how the focus shift of the visible-blind filter was
+    # taken out. These are the positions that `focus` finds for this
+    # design. The feed optics were bonded in their mounts before the array
+    # was moved, so their twist is not recomputed here.
     feed_optic = dataclasses.replace(
         feed_optic,
         twist=_twist(feed_optic, grating),
+        translation_focus=translation_focus,
+        angle_focus=angle_focus,
     )
 
     return dataclasses.replace(
