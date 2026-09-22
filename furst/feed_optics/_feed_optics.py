@@ -168,7 +168,8 @@ class FeedOptic(
 
     See Also
     --------
-    :func:`furst.instruments.focus`: Finds this displacement by raytracing.
+    :meth:`furst.instruments.Instrument.focused`:
+        Finds this displacement by raytracing.
     """
 
     angle_focus: u.Quantity | na.AbstractScalar = 0 * u.deg
@@ -183,7 +184,8 @@ class FeedOptic(
 
     See Also
     --------
-    :func:`furst.instruments.focus`: Finds this angle by raytracing.
+    :meth:`furst.instruments.Instrument.focused`:
+        Finds this angle by raytracing.
     """
 
     pitch: u.Quantity | na.AbstractScalar = 0 * u.deg

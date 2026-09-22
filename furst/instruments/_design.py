@@ -388,7 +388,7 @@ def design(
     instrument, :data:`translation_focus` and :data:`angle_focus`, since
     the instrument was focused after it was assembled and with the
     visible-blind filter in place.
-    See :func:`focus`, which finds those positions.
+    See :meth:`Instrument.focused`, which finds those positions.
 
     Parameters
     ----------
@@ -479,8 +479,8 @@ def design(
 
     # Once assembled, the instrument was focused by moving the feed optic
     # array, which is how the focus shift of the visible-blind filter was
-    # taken out. These are the positions that `focus` finds for this
-    # design. The feed optics were bonded in their mounts before the array
+    # taken out. These are the positions that `Instrument.focused` finds
+    # for this design. The feed optics were bonded in their mounts before the array
     # was moved, so their twist is not recomputed here.
     feed_optic = dataclasses.replace(
         feed_optic,

@@ -10,8 +10,6 @@ __all__ = [
     "translation_focus",
     "angle_focus",
     "Instrument",
-    "width_line",
-    "focus",
     "design_proposed",
     "design",
 ]
@@ -49,7 +47,7 @@ See :data:`wavelength_focus_first`.
 translation_focus = 0.8733 * u.mm
 """
 The displacement of the feed optic array along the axis of the instrument
-which focuses the first channel, found by :func:`focus`.
+which focuses the first channel, found by :meth:`Instrument.focused`.
 
 It is close to the focus shift of the visible-blind filter, since the
 instrument images the virtual image of the Sun onto the detector at very
@@ -60,7 +58,7 @@ about as much as the filter moves the focus away from it.
 angle_focus = -0.00296 * u.deg
 """
 The rotation of the feed optic array about the first feed optic which
-focuses the last channel, found by :func:`focus`.
+focuses the last channel, found by :meth:`Instrument.focused`.
 
 This is a very small adjustment, because sliding the array along the axis
 of the instrument already focuses the whole spectrum to within a few
@@ -74,5 +72,4 @@ whose radius differed from the design.
 """
 
 from ._instruments import Instrument  # noqa: E402
-from ._focus import width_line, focus  # noqa: E402
 from ._design import design_proposed, design  # noqa: E402
