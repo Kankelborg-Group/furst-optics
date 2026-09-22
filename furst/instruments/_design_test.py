@@ -45,6 +45,23 @@ def test_design(func, rowland_radius: u.Quantity):
     assert 0.5 * u.mm < result.camera.sensor.translation.z < 0.9 * u.mm
     assert result.filter.translation == result.camera.sensor.translation
 
+    # the filter is centered on the beam from the grating and normal to it,
+    # a couple of inches in front of the sensor
+    origin = na.Cartesian3dVectorArray() * u.mm
+    position_grating = result.grating.transformation(origin)
+    position_sensor = result.camera.sensor.transformation(origin)
+    position_filter = result.filter.transformation(origin)
+    beam = position_sensor - position_grating
+    beam = beam / beam.length
+    offset = position_sensor - position_filter
+    normal = result.filter.transformation.transformation_linear(
+        na.Cartesian3dVectorArray(0, 0, 1)
+    )
+    assert np.isclose(offset.length, result.filter.distance)
+    assert np.isclose(offset @ beam, result.filter.distance)
+    assert np.isclose(normal @ beam, 1)
+    assert 3 * u.deg < np.abs(result.filter.yaw) < 7 * u.deg
+
     # every channel lands on the sensor, and the coatings, rulings, and
     # filter have cost it most of the light
     rays = result.system.rayfunction_default

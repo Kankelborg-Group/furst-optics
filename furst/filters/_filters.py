@@ -12,6 +12,7 @@ __all__ = [
 
 @dataclasses.dataclass(eq=False, repr=False)
 class Filter(
+    optika.mixins.Yawable,
     optika.mixins.Translatable,
     furst.abc.AbstractRowlandComponent,
     Generic[furst.typevars.MaterialT],
@@ -19,10 +20,12 @@ class Filter(
     r"""
     A model of the visible-blind filter in front of the sensor.
 
-    The filter is a plane-parallel window mounted on the camera head,
-    square to the sensor and a distance :attr:`distance` in front of it,
-    so it shares the sensor's place on the Rowland circle and its
-    :attr:`translation`.
+    The filter is a plane-parallel window mounted on the camera head
+    a distance :attr:`distance` in front of the sensor, so it shares the
+    sensor's place on the Rowland circle and its :attr:`translation`.
+    It is centered on the beam from the grating and normal to it, which
+    :attr:`yaw` expresses as the angle between the normal of the sensor
+    and the beam.
     It is modeled as a pair of surfaces, a front face made of
     :attr:`material` and a back face made of :class:`optika.materials.Vacuum`
     a distance :attr:`thickness` behind it.
@@ -94,7 +97,7 @@ class Filter(
     distance: u.Quantity | na.AbstractScalar = 0 * u.mm
     """
     The distance from the front face of the window to the sensor,
-    measured along the normal of the sensor.
+    measured along the beam.
     """
 
     rowland_radius: u.Quantity | na.AbstractScalar = 0 * u.mm
@@ -113,6 +116,16 @@ class Filter(
     translation: u.Quantity | na.AbstractCartesian3dVectorArray = 0 * u.mm
     """
     An additional translation vector, shared with the sensor.
+    """
+
+    yaw: u.Quantity | na.AbstractScalar = 0 * u.deg
+    """
+    The angle between the normal of the sensor and the normal of the
+    window, about the vertical axis, measured at the sensor.
+
+    Set it to the angle between the normal of the sensor and the beam
+    from the grating, so that the window is centered on the beam and
+    normal to it.
     """
 
     @property
