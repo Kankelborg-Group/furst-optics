@@ -73,6 +73,30 @@ def _angle_from_normal(
     return np.arctan2(position.xy.length, np.abs(position.z))
 
 
+def _angle_beam(
+    grating: furst.gratings.Grating,
+    sensor: furst.sensors.Sensor,
+) -> u.Quantity | na.AbstractScalar:
+    """
+    The angle between the normal of the sensor and the beam from the
+    grating, about the vertical axis.
+
+    This is the yaw which turns a window mounted in front of the sensor
+    to face the grating.
+
+    Parameters
+    ----------
+    grating
+        The grating, placed on the Rowland circle.
+    sensor
+        The sensor, placed on the Rowland circle.
+    """
+    origin = na.Cartesian3dVectorArray() * u.mm
+    direction = sensor.transformation(origin) - grating.transformation(origin)
+    direction = sensor.transformation.transformation_linear.inverse(direction)
+    return np.arctan2(direction.x, direction.z).to(u.deg)
+
+
 def _aperture_height(
     feed_optic: furst.feed_optics.FeedOptic,
     grating: furst.gratings.Grating,
@@ -269,6 +293,25 @@ def design_proposed(
         twist=_twist(feed_optic, grating),
     )
 
+    # The visible-blind filter is a coated magnesium fluoride window on the
+    # camera head, centered on the beam from the grating and normal to it.
+    # Where exactly it sits on the head is not recorded, so it is placed
+    # two inches in front of the sensor, as the original mechanical
+    # placeholder and the pinhole study of the filter both assumed. The
+    # whole two-inch window is taken to be clear, and its thickness is the
+    # mean of the two windows that were measured, since which of them flew
+    # is not recorded either.
+    blind_filter = furst.filters.Filter(
+        material=furst.filters.materials.transmission_witness_measured(),
+        thickness=furst.filters.thickness_measured.mean(),
+        radius_clear=25.4 * u.mm,
+        radius_mech=25.4 * u.mm,
+        distance=(2 * u.imperial.inch).to(u.mm),
+        rowland_radius=rowland_radius,
+        rowland_azimuth=rowland_azimuth_sensor,
+        yaw=_angle_beam(grating, sensor),
+    )
+
     # The default wavelength grid stops short of the edges of the sensor by
     # a margin of pixels, so the traced spectrum lands inside the sensor
     # with room to spare.
@@ -284,6 +327,7 @@ def design_proposed(
         camera=furst.cameras.Camera(
             sensor=sensor,
         ),
+        filter=blind_filter,
         wavelength=na.linspace(
             start=-inset_wavelength,
             stop=inset_wavelength,
@@ -305,6 +349,13 @@ def design_proposed(
             centers=True,
         ),
     )
+
+    # The window moves the focus away from the grating by 0.6 to 0.8 mm,
+    # depending on wavelength through the dispersion of magnesium fluoride.
+    # Nothing here compensates for that. The flight instrument was focused
+    # with the filter in place by moving the feed optic array, which this
+    # model does not yet reproduce, so the sensor stays on the Rowland
+    # circle and the trace shows the defocus of the window.
 
     return result
 
@@ -407,6 +458,13 @@ def design(
         rowland_azimuth=rowland_azimuth(result.camera.sensor.rowland_azimuth),
     )
 
+    blind_filter = dataclasses.replace(
+        result.filter,
+        rowland_radius=rowland_radius,
+        rowland_azimuth=rowland_azimuth(result.filter.rowland_azimuth),
+        yaw=_angle_beam(grating, sensor),
+    )
+
     feed_optic = dataclasses.replace(
         feed_optic,
         twist=_twist(feed_optic, grating),
@@ -420,4 +478,5 @@ def design(
             result.camera,
             sensor=sensor,
         ),
+        filter=blind_filter,
     )
