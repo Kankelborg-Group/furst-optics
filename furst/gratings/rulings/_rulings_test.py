@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 import astropy.units as u
 import named_arrays as na
 import optika
@@ -55,3 +56,39 @@ def test_rulings_simulated_efficiency():
     assert result.shape == {"wavelength": 3}
     assert (result > 0.29).all()
     assert (result < 0.34).all()
+
+
+def test_rulings_simulated_matches_sinusoid():
+    """
+    The groove efficiency recovered from the Zeiss simulation agrees with
+    optika's own scalar model of a sinusoidal profile of the same depth
+    across the bandpass.
+
+    This is both a check on the decomposition and the reason for the
+    requirement on optika: before optika 2.9 the sinusoidal model
+    returned the Bessel function unsquared, about 0.55 here.
+    """
+    depth = 42 * u.nm
+    rulings = furst.gratings.rulings.rulings_simulated(depth)
+    sinusoid = optika.rulings.SinusoidalRulings(
+        spacing=rulings.spacing,
+        depth=depth,
+        diffraction_order=rulings.diffraction_order,
+    )
+
+    angle = furst.gratings.rulings.angle_simulated
+    rays = optika.rays.RayVectorArray(
+        wavelength=rulings.efficiency_measured.inputs.wavelength,
+        position=na.Cartesian3dVectorArray(0, 0, 0) * u.mm,
+        direction=na.Cartesian3dVectorArray(
+            x=np.sin(angle),
+            y=0,
+            z=np.cos(angle),
+        ),
+    )
+    normal = na.Cartesian3dVectorArray(0, 0, -1)
+
+    grooves = rulings.efficiency(rays, normal)
+    expected = sinusoid.efficiency(rays, normal)
+
+    assert np.abs(grooves - expected).max() < 0.02
