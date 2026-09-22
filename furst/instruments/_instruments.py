@@ -5,12 +5,40 @@ import named_arrays as na
 import optika
 import furst
 
-# defined in the package __init__ so that Sphinx documents them
-from . import wavelength_focus_first, wavelength_focus_last
-
 __all__ = [
     "Instrument",
 ]
+
+
+def _width_focus(
+    instrument: "Instrument",
+    wavelength: na.AbstractScalar,
+    channel: int,
+    num_pupil: int,
+) -> na.AbstractScalar:
+    """
+    The width of the lines of one channel, combined in quadrature.
+
+    This is the quantity each stage of the focus minimizes, so that a
+    channel is focused as a whole rather than at one wavelength.
+
+    Parameters
+    ----------
+    instrument
+        The instrument to trace rays through.
+    wavelength
+        The wavelengths to measure, whose axes are the ones combined over.
+    channel
+        The index of the channel to measure.
+    num_pupil
+        The number of samples along each axis of the pupil.
+    """
+    width = instrument.width_line(wavelength, num_pupil)
+    width = width[{instrument.feed_optic.axis_channel: channel}]
+    axis = tuple(na.shape(wavelength))
+    if axis:
+        width = np.sqrt(np.square(width).mean(axis))
+    return width
 
 
 def _vertex(
@@ -310,10 +338,9 @@ class Instrument(
             import named_arrays as na
             import furst
 
-            # Load the design and the wavelength its first channel was
-            # focused at
+            # Load the design, and a wavelength in its first channel
             instrument = furst.instruments.design()
-            wavelength = furst.instruments.wavelength_focus_first
+            wavelength = 121.6 * u.nm
 
             # Slide the feed optic array along the axis of the instrument
             translation = na.linspace(-1, 2, axis="position", num=13) * u.mm
@@ -366,8 +393,7 @@ class Instrument(
 
     def focused(
         self,
-        wavelength_first: u.Quantity = wavelength_focus_first,
-        wavelength_last: u.Quantity = wavelength_focus_last,
+        wavelength: None | na.AbstractScalar = None,
         translation: None | na.AbstractScalar = None,
         angle: None | na.AbstractScalar = None,
         num_pupil: int = 11,
@@ -380,25 +406,34 @@ class Instrument(
         end of the spectrum:
 
         #. The lower stage slides the whole array along the axis of the
-           instrument until the line at ``wavelength_first`` is narrowest in
-           the first channel.
+           instrument until the first channel is sharpest.
         #. The upper stage pivots the array about the first feed optic,
-           which leaves the first channel where it is, until the line at
-           ``wavelength_last`` is narrowest in the last channel.
+           which leaves the first channel where it is, until the last
+           channel is sharpest.
 
         The remaining channels are not adjusted; they land wherever the
         mechanism puts them, as they do on the bench.
 
-        Each step samples :meth:`width_line` over a grid of positions and
-        fits a parabola to its square, and the grid is traced all at once,
-        so the whole procedure costs two raytraces.
+        A channel is focused as a whole rather than at one wavelength: the
+        widths of the lines at ``wavelength`` are combined in quadrature,
+        which balances the channel across the detector, since a flat
+        detector meets the curved focal surface at only two points.
+        The bench instead focused a single calibration line in each of the
+        two channels, chosen to fall where the detector crosses the Rowland
+        circle, which is the same idea carried out with the lines that were
+        available.
+
+        Each step samples the width over a grid of stage positions and fits
+        a parabola to its square, and the grid is traced all at once, so
+        the whole procedure costs two raytraces.
 
         Parameters
         ----------
-        wavelength_first
-            The wavelength at which the first channel is focused.
-        wavelength_last
-            The wavelength at which the last channel is focused.
+        wavelength
+            The wavelengths to focus each channel over.
+            Normalized coordinates give every channel its own range, which
+            is the default: five wavelengths evenly spaced across the range
+            this instrument traces.
         translation
             The displacements of the array to sample in the first step.
         angle
@@ -423,13 +458,19 @@ class Instrument(
         """
         axis = "position"
 
+        if wavelength is None:
+            wavelength = na.linspace(
+                start=self.wavelength.min(),
+                stop=self.wavelength.max(),
+                axis="wavelength",
+                num=5,
+            )
         if translation is None:
             translation = na.linspace(-1, 2, axis=axis, num=13) * u.mm
         if angle is None:
             angle = na.linspace(-0.3, 0.3, axis=axis, num=13) * u.deg
 
         feed_optic = self.feed_optic
-        axis_channel = feed_optic.axis_channel
 
         def moved(translation_focus, angle_focus):
             return dataclasses.replace(
@@ -442,24 +483,26 @@ class Instrument(
             )
 
         # the lower stage, which focuses the first channel
-        width = moved(translation, 0 * u.deg).width_line(
-            wavelength=wavelength_first,
-            num_pupil=num_pupil,
-        )
         translation_focus = _vertex(
             inputs=translation,
-            outputs=width[{axis_channel: 0}],
+            outputs=_width_focus(
+                instrument=moved(translation, 0 * u.deg),
+                wavelength=wavelength,
+                channel=0,
+                num_pupil=num_pupil,
+            ),
             axis=axis,
         )
 
         # the upper stage, which focuses the last channel
-        width = moved(translation_focus, angle).width_line(
-            wavelength=wavelength_last,
-            num_pupil=num_pupil,
-        )
         angle_focus = _vertex(
             inputs=angle,
-            outputs=width[{axis_channel: ~0}],
+            outputs=_width_focus(
+                instrument=moved(translation_focus, angle),
+                wavelength=wavelength,
+                channel=~0,
+                num_pupil=num_pupil,
+            ),
             axis=axis,
         )
 

@@ -62,23 +62,24 @@ def _moved(instrument, **kwargs):
     )
 
 
-def test_wavelength_focus():
-    """
-    The wavelengths the instrument was focused at are the visible
-    calibration lines scaled by the ratio of the two ruling densities, and
-    they lie at the two ends of the bandpass.
-    """
-    first = furst.instruments.wavelength_focus_first
-    last = furst.instruments.wavelength_focus_last
-    assert u.isclose(first, 118.45 * u.nm, atol=0.01 * u.nm)
-    assert u.isclose(last, 182.18 * u.nm, atol=0.01 * u.nm)
+def _band(instrument, num=5):
+    """The wavelengths each channel is focused over, in normalized coordinates."""
+    return na.linspace(
+        start=instrument.wavelength.min(),
+        stop=instrument.wavelength.max(),
+        axis="wavelength",
+        num=num,
+    )
 
-    instrument = furst.instruments.design(num_field=3, num_pupil=3)
-    axis = instrument.feed_optic.axis_channel
-    assert instrument.wavelength_min[{axis: 0}] < first
-    assert first < instrument.wavelength_max[{axis: 0}]
-    assert instrument.wavelength_min[{axis: ~0}] < last
-    assert last < instrument.wavelength_max[{axis: ~0}]
+
+def _width(instrument, wavelength, channel, num_pupil=5):
+    """The width of the lines of one channel, combined in quadrature."""
+    width = instrument.width_line(wavelength, num_pupil=num_pupil)
+    width = width[{instrument.feed_optic.axis_channel: channel}]
+    axis = tuple(na.shape(wavelength))
+    if axis:
+        width = np.sqrt(np.square(width).mean(axis))
+    return width
 
 
 def test_width_line():
@@ -89,10 +90,8 @@ def test_width_line():
     instrument = furst.instruments.design()
     axis = instrument.feed_optic.axis_channel
 
-    width = instrument.width_line(
-        wavelength=furst.instruments.wavelength_focus_first,
-        num_pupil=5,
-    )
+    # hydrogen Lyman alpha, which only the first channel sees
+    width = instrument.width_line(121.6 * u.nm, num_pupil=5)
     assert width.shape == {axis: 7}
 
     width = width.to(u.um)
@@ -100,11 +99,34 @@ def test_width_line():
     assert np.isnan(width[{axis: ~0}])
 
 
-def test_focus():
+def test_width_line_over_a_band():
+    """
+    Normalized wavelengths give every channel its own range, so every
+    channel sees all of them.
+    """
+    instrument = furst.instruments.design()
+    axis = instrument.feed_optic.axis_channel
+    wavelength = _band(instrument)
+
+    width = instrument.width_line(wavelength, num_pupil=5)
+    assert width.shape == {axis: 7, "wavelength": 5}
+    assert np.all(np.isfinite(width))
+
+    # the wavelengths span each channel without running off the detector
+    physical = dataclasses.replace(
+        instrument,
+        wavelength=wavelength,
+    ).wavelength_physical
+    for channel in [0, ~0]:
+        index = {axis: channel}
+        assert instrument.wavelength_min[index] < physical[index].min()
+        assert physical[index].max() < instrument.wavelength_max[index]
+
+
+def test_focused():
     """
     Focusing the design reproduces the positions stored in the package, and
-    the line is narrower at those positions than a tenth of a millimeter to
-    either side of them.
+    each stage is at the minimum of its own focus curve.
     """
     instrument = furst.instruments.design()
     result = instrument.focused()
@@ -116,31 +138,25 @@ def test_focus():
     error = np.abs(angle - furst.instruments.angle_focus)
     assert np.all(error < 1e-4 * u.deg)
 
-    # the first channel is focused by the displacement of the array
+    wavelength = _band(result)
     axis = "position"
+
+    # the first channel is focused by the displacement of the array
     offset = na.ScalarArray(np.array([-0.1, 0, 0.1]) * u.mm, axes=axis)
     moved = _moved(result, translation_focus=translation + offset)
-    width = moved.width_line(
-        wavelength=furst.instruments.wavelength_focus_first,
-        num_pupil=5,
-    )
-    width = width[{result.feed_optic.axis_channel: 0}]
+    width = _width(moved, wavelength, channel=0)
     assert width[{axis: 1}] < width[{axis: 0}]
     assert width[{axis: 1}] < width[{axis: 2}]
 
     # and the last channel by the rotation of the array
     offset = na.ScalarArray(np.array([-0.1, 0, 0.1]) * u.deg, axes=axis)
     moved = _moved(result, angle_focus=angle + offset)
-    width = moved.width_line(
-        wavelength=furst.instruments.wavelength_focus_last,
-        num_pupil=5,
-    )
-    width = width[{result.feed_optic.axis_channel: ~0}]
+    width = _width(moved, wavelength, channel=~0)
     assert width[{axis: 1}] < width[{axis: 0}]
     assert width[{axis: 1}] < width[{axis: 2}]
 
 
-def test_focus_improves_the_design():
+def test_focused_improves_every_channel():
     """
     The design is focused, and moving the feed optic array back to where it
     would sit without the visible-blind filter makes every channel worse.
@@ -148,20 +164,14 @@ def test_focus_improves_the_design():
     instrument = furst.instruments.design()
     assert instrument.feed_optic.translation_focus != 0 * u.mm
 
-    wavelength = na.linspace(
-        start=furst.instruments.wavelength_focus_first,
-        stop=furst.instruments.wavelength_focus_last,
-        axis=instrument.feed_optic.axis_channel,
-        num=7,
-    )
-
-    width = instrument.width_line(wavelength, num_pupil=5)
     unfocused = _moved(
         instrument,
         translation_focus=0 * u.mm,
         angle_focus=0 * u.deg,
     )
-    width_unfocused = unfocused.width_line(wavelength, num_pupil=5)
+    wavelength = _band(instrument)
 
-    assert np.all(width < 5 * u.um)
-    assert np.all(width < width_unfocused)
+    for channel in range(7):
+        width = _width(instrument, wavelength, channel)
+        assert width < 5 * u.um
+        assert width < _width(unfocused, wavelength, channel)
