@@ -197,8 +197,9 @@ def focus(
         instrument = furst.instruments.design()
         instrument = furst.instruments.focus(instrument)
 
-        print(f"{instrument.feed_optic.translation_focus=:.4f}")
-        print(f"{instrument.feed_optic.angle_focus=:.5f}")
+        feed_optic = instrument.feed_optic
+        print(f"the array slides {feed_optic.translation_focus.ndarray:+.4f}")
+        print(f"the array pivots {feed_optic.angle_focus.ndarray:+.5f}")
     """
     axis = "position"
 
