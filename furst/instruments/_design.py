@@ -350,29 +350,12 @@ def design_proposed(
         ),
     )
 
-    # The window moves the focus away from the grating by an amount that
-    # depends on wavelength through the dispersion of magnesium fluoride,
-    # so the sensor, and the filter mounted with it, are moved back by the
-    # shift at the middle of the wavelength range, which splits the
-    # difference between the channels.
-    wavelength_focus = (result.wavelength_min.min() + result.wavelength_max.max()) / 2
-    translation_focus = na.Cartesian3dVectorArray(0, 0, 1) * blind_filter.focus_shift(
-        wavelength_focus
-    )
-    result = dataclasses.replace(
-        result,
-        filter=dataclasses.replace(
-            blind_filter,
-            translation=translation_focus,
-        ),
-        camera=dataclasses.replace(
-            result.camera,
-            sensor=dataclasses.replace(
-                sensor,
-                translation=translation_focus,
-            ),
-        ),
-    )
+    # The window moves the focus away from the grating by 0.6 to 0.8 mm,
+    # depending on wavelength through the dispersion of magnesium fluoride.
+    # Nothing here compensates for that. The flight instrument was focused
+    # with the filter in place by moving the feed optic array, which this
+    # model does not yet reproduce, so the sensor stays on the Rowland
+    # circle and the trace shows the defocus of the window.
 
     return result
 

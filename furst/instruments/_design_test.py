@@ -36,14 +36,14 @@ def test_design(func, rowland_radius: u.Quantity):
     assert isinstance(result.grating.rulings, optika.rulings.MeasuredRulings)
 
     # the visible-blind filter is a coated magnesium fluoride window on the
-    # camera head, and the sensor and filter have been moved back together
-    # to compensate for the focus shift of the window
+    # camera head, and nothing compensates for its focus shift yet: the
+    # sensor stays on the Rowland circle
     assert isinstance(result.filter.material, optika.materials.MeasuredFilter)
     assert isinstance(result.filter.material.medium, optika.materials.Dielectric)
     assert result.filter.rowland_radius == result.camera.sensor.rowland_radius
     assert result.filter.rowland_azimuth == result.camera.sensor.rowland_azimuth
-    assert 0.5 * u.mm < result.camera.sensor.translation.z < 0.9 * u.mm
-    assert result.filter.translation == result.camera.sensor.translation
+    assert np.all(result.camera.sensor.translation == 0 * u.mm)
+    assert np.all(result.filter.translation == result.camera.sensor.translation)
 
     # the filter is centered on the beam from the grating and normal to it,
     # a couple of inches in front of the sensor
