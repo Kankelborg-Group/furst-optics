@@ -155,6 +155,39 @@ class FeedOptic(
     Rowland circle.
     """
 
+    translation_focus: u.Quantity | na.AbstractScalar = 0 * u.mm
+    """
+    The displacement of the whole array along the axis of the instrument.
+
+    The feed optics are mounted as a unit on a stage which slides along the
+    axis of the instrument, and this is the motion used to focus the first
+    channel.
+    A positive displacement carries the array away from the grating, which
+    lengthens the distance from the virtual image to the grating and so
+    *shortens* the distance from the grating to the focus.
+
+    See Also
+    --------
+    :meth:`furst.instruments.Instrument.focused`:
+        Finds this displacement by raytracing.
+    """
+
+    angle_focus: u.Quantity | na.AbstractScalar = 0 * u.deg
+    """
+    The rotation of the whole array about the first feed optic.
+
+    The array is mounted on a second stage which pivots about the first
+    feed optic, and this is the motion used to focus the remaining
+    channels once the first one is focused.
+    The rotation is about the vertical axis through :attr:`pivot_focus`,
+    so it leaves the first feed optic where it is.
+
+    See Also
+    --------
+    :meth:`furst.instruments.Instrument.focused`:
+        Finds this angle by raytracing.
+    """
+
     pitch: u.Quantity | na.AbstractScalar = 0 * u.deg
     """
     The angle of rotation about the vector tangent to the
@@ -174,6 +207,62 @@ class FeedOptic(
     """
 
     @property
+    def axis_channel(self) -> None | str:
+        """
+        The name of the logical axis along which the channels of the
+        instrument are distributed, taken from :attr:`rowland_azimuth`,
+        or :obj:`None` if this is a single feed optic.
+        """
+        shape = optika.shape(self.rowland_azimuth)
+        if not shape:
+            return None
+        if len(shape) != 1:  # pragma: nocover
+            raise ValueError(
+                f"the azimuths of the array must have at most one axis, "
+                f"got shape {shape}"
+            )
+        (axis,) = shape
+        return axis
+
+    @property
+    def pivot_focus(self) -> na.Cartesian3dVectorArray:
+        """
+        The point that :attr:`angle_focus` rotates the array about, which is
+        where the first feed optic images the Sun onto the Rowland circle.
+
+        The virtual image of the first feed optic sits a few tens of microns
+        inside this point, since the clear aperture is twisted to aim the
+        beam at the grating, so the rotation moves the first channel by a
+        small fraction of a micron instead of leaving it exactly fixed.
+        """
+        azimuth = self.rowland_azimuth
+        axis = self.axis_channel
+        if axis is not None:
+            azimuth = azimuth[{axis: 0}]
+        radius = self.rowland_radius
+        x = na.as_named_array(radius * np.sin(azimuth))
+        z = na.as_named_array(radius * np.cos(azimuth))
+        return na.Cartesian3dVectorArray(x=x, y=0 * x, z=z)
+
+    @property
+    def transformation_focus(self) -> na.transformations.AbstractTransformation:
+        """
+        The rigid motion of the whole array applied by the focus mechanism,
+        expressed in the global coordinate system.
+
+        See :attr:`translation_focus` and :attr:`angle_focus`.
+        """
+        pivot = self.pivot_focus
+        return na.transformations.TransformationList(
+            [
+                na.transformations.Translation(-pivot),
+                na.transformations.Cartesian3dRotationY(self.angle_focus),
+                na.transformations.Translation(pivot),
+                na.transformations.Cartesian3dTranslation(z=self.translation_focus),
+            ]
+        )
+
+    @property
     def transformation(self) -> na.transformations.AbstractTransformation:
         t_center = na.transformations.Cartesian3dTranslation(
             x=0 * u.mm,
@@ -191,7 +280,14 @@ class FeedOptic(
             y=0 * u.mm,
             z=self.radius / 2,
         )
-        return t_img @ super().transformation @ t_twist @ t_yaw @ t_center
+        return (
+            self.transformation_focus
+            @ t_img
+            @ super().transformation
+            @ t_twist
+            @ t_yaw
+            @ t_center
+        )
 
     @property
     def transformation_image(self):

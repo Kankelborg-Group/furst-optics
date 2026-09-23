@@ -10,6 +10,72 @@ __all__ = [
 ]
 
 
+def _width_focus(
+    instrument: "Instrument",
+    wavelength: na.AbstractScalar,
+    channel: int,
+    num_field: int,
+    num_pupil: int,
+) -> na.AbstractScalar:
+    """
+    The width of the lines of one channel, combined in quadrature.
+
+    This is the quantity each stage of the focus minimizes, so that a
+    channel is focused as a whole rather than at one wavelength.
+
+    Parameters
+    ----------
+    instrument
+        The instrument to trace rays through.
+    wavelength
+        The wavelengths to measure, whose axes are the ones combined over.
+    channel
+        The index of the channel to measure.
+    num_field
+        The number of samples along each axis of the solar disk.
+    num_pupil
+        The number of samples along each axis of the pupil.
+    """
+    width = instrument.width_line(wavelength, num_field, num_pupil)
+    width = width[{instrument.feed_optic.axis_channel: channel}]
+    axis = tuple(na.shape(wavelength))
+    if axis:
+        width = np.sqrt(np.square(width).mean(axis))
+    return width
+
+
+def _vertex(
+    inputs: na.AbstractScalar,
+    outputs: na.AbstractScalar,
+    axis: str,
+) -> na.AbstractScalar:
+    """
+    The position of the minimum of a parabola fitted to a focus curve.
+
+    The square of the width of the line is the quantity which is quadratic
+    in the defocus, so it is what is fitted, as on the bench.
+
+    Parameters
+    ----------
+    inputs
+        The sampled positions of the feed optic array.
+    outputs
+        The width of the line measured at each position.
+    axis
+        The logical axis along which the curve is sampled.
+    """
+    fit = na.PolynomialFitFunctionArray.from_degree(
+        inputs=inputs,
+        outputs=np.square(outputs),
+        degree=2,
+        axis_polynomial=axis,
+        center=inputs.mean(axis),
+    )
+    name_linear, name_quadratic = fit.coefficient_names[1:]
+    coefficients = fit.coefficients.components
+    return fit.center - coefficients[name_linear] / (2 * coefficients[name_quadratic])
+
+
 @dataclasses.dataclass(eq=False, repr=False)
 class Instrument(
     optika.mixins.Printable,
@@ -233,3 +299,239 @@ class Instrument(
             grid_input=grid,
             transformation=self.transformation,
         )
+
+    def width_line(
+        self,
+        wavelength: u.Quantity | na.AbstractScalar,
+        num_field: int = 9,
+        num_pupil: int = 9,
+    ) -> na.AbstractScalar:
+        """
+        The width of the spectral line formed at the given wavelength,
+        measured along the dispersion direction, for every channel.
+
+        This is the disk-integrated line spread function: the whole solar
+        disk is imaged onto a single column of pixels, so the width of a
+        line is the spread of the rays from the entire disk and the entire
+        pupil, added in quadrature with the width of a pixel.
+        It is the quantity plotted in the report, and the one minimized to
+        focus the instrument.
+        Channels which do not see the given wavelength catch no rays, and
+        their width is :obj:`numpy.nan`.
+
+        Parameters
+        ----------
+        wavelength
+            The wavelength of the line, in physical units.
+            Any axes of this array are carried through to the result, so a
+            grid of wavelengths can be measured at once.
+        num_field
+            The number of samples along each axis of the solar disk.
+        num_pupil
+            The number of samples along each axis of the pupil.
+
+        Examples
+        --------
+
+        Plot the focus curve of the first channel, the width of a line as
+        the feed optic array slides along the axis of the instrument.
+
+        .. jupyter-execute::
+
+            import dataclasses
+            import matplotlib.pyplot as plt
+            import astropy.units as u
+            import astropy.visualization
+            import named_arrays as na
+            import furst
+
+            # Load the design, and a wavelength in its first channel
+            instrument = furst.instruments.design()
+            wavelength = 121.6 * u.nm
+
+            # Slide the feed optic array along the axis of the instrument
+            translation = na.linspace(-1, 2, axis="position", num=13) * u.mm
+            feed_optic = dataclasses.replace(
+                instrument.feed_optic,
+                translation_focus=translation,
+            )
+            instrument = dataclasses.replace(instrument, feed_optic=feed_optic)
+
+            # Measure the width of the line in the first channel
+            axis_channel = instrument.feed_optic.axis_channel
+            width = instrument.width_line(wavelength)
+            width = width[{axis_channel: 0}]
+
+            # Plot the focus curve
+            with astropy.visualization.quantity_support():
+                fig, ax = plt.subplots(constrained_layout=True)
+                na.plt.plot(translation, width, ax=ax, marker="o");
+                ax.set_xlabel(f"displacement of the array ({translation.unit:latex_inline})");
+                ax.set_ylabel(f"width of the line ({width.unit:latex_inline})");
+        """
+        axis_field = ("field_x", "field_y")
+        axis_pupil = ("pupil_x", "pupil_y")
+
+        instrument = dataclasses.replace(
+            self,
+            wavelength=wavelength,
+            field=na.Cartesian2dVectorLinearSpace(
+                start=-1,
+                stop=1,
+                axis=na.Cartesian2dVectorArray(*axis_field),
+                num=num_field,
+                centers=True,
+            ),
+            pupil=na.Cartesian2dVectorLinearSpace(
+                start=-1,
+                stop=1,
+                axis=na.Cartesian2dVectorArray(*axis_pupil),
+                num=num_pupil,
+                centers=True,
+            ),
+        )
+
+        rays = instrument.system.rayfunction_default.outputs
+
+        axis = axis_field + axis_pupil
+        weight = rays.unvignetted.astype(float)
+        position = rays.position.x / instrument.system.sensor.width_pixel
+
+        # a channel which sees none of the given wavelength catches no rays,
+        # and divides zero by zero to give the documented NaN
+        with np.errstate(invalid="ignore"):
+            mean = (position * weight).sum(axis) / weight.sum(axis)
+            variance = (np.square(position - mean) * weight).sum(axis)
+            variance = variance / weight.sum(axis)
+
+            # the finite size of the pixel sampling the spectrum, which is
+            # a constant and so does not move the focus
+            variance = variance.to(u.dimensionless_unscaled) + 1 / 12
+
+            result = np.sqrt(variance) * u.pix
+
+        return result
+
+    def focused(
+        self,
+        wavelength: None | na.AbstractScalar = None,
+        translation: None | na.AbstractScalar = None,
+        angle: None | na.AbstractScalar = None,
+        num_field: int = 9,
+        num_pupil: int = 9,
+    ) -> "Instrument":
+        """
+        A copy of this instrument with its feed optic array moved to focus
+        it, reproducing the procedure carried out during assembly.
+
+        The array is mounted on two stages, and each is used to focus one
+        end of the spectrum:
+
+        #. The lower stage slides the whole array along the axis of the
+           instrument until the first channel is sharpest.
+        #. The upper stage pivots the array about the first feed optic,
+           which leaves the first channel where it is, until the last
+           channel is sharpest.
+
+        The remaining channels are not adjusted; they land wherever the
+        mechanism puts them, as they do on the bench.
+
+        A channel is focused as a whole rather than at one wavelength: the
+        widths of the lines at ``wavelength`` are combined in quadrature,
+        which balances the channel across the detector, since a flat
+        detector meets the curved focal surface at only two points.
+        The width is the disk-integrated one of :meth:`width_line`, so the
+        focus is set by the lines the instrument actually records.
+        The bench instead focused a single calibration line in each of the
+        two channels, chosen to fall where the detector crosses the Rowland
+        circle, which is the same idea carried out with the lines that were
+        available.
+
+        Each step samples the width over a grid of stage positions and fits
+        a parabola to its square, and the grid is traced all at once, so
+        the whole procedure costs two raytraces.
+
+        Parameters
+        ----------
+        wavelength
+            The wavelengths to focus each channel over.
+            Normalized coordinates give every channel its own range, which
+            is the default: five wavelengths evenly spaced across the range
+            this instrument traces.
+        translation
+            The displacements of the array to sample in the first step.
+        angle
+            The rotations of the array to sample in the second step.
+        num_field
+            The number of samples along each axis of the solar disk.
+        num_pupil
+            The number of samples along each axis of the pupil.
+
+        Examples
+        --------
+
+        Focus the design and print the positions found.
+
+        .. jupyter-execute::
+
+            import furst
+
+            instrument = furst.instruments.design().focused()
+
+            feed_optic = instrument.feed_optic
+            print(f"the array slides {feed_optic.translation_focus.ndarray:+.4f}")
+            print(f"the array pivots {feed_optic.angle_focus.ndarray:+.5f}")
+        """
+        axis = "position"
+
+        if wavelength is None:
+            wavelength = na.linspace(
+                start=self.wavelength.min(),
+                stop=self.wavelength.max(),
+                axis="wavelength",
+                num=5,
+            )
+        if translation is None:
+            translation = na.linspace(-1, 2, axis=axis, num=13) * u.mm
+        if angle is None:
+            angle = na.linspace(-0.3, 0.3, axis=axis, num=13) * u.deg
+
+        feed_optic = self.feed_optic
+
+        def moved(translation_focus, angle_focus):
+            return dataclasses.replace(
+                self,
+                feed_optic=dataclasses.replace(
+                    feed_optic,
+                    translation_focus=translation_focus,
+                    angle_focus=angle_focus,
+                ),
+            )
+
+        # the lower stage, which focuses the first channel
+        translation_focus = _vertex(
+            inputs=translation,
+            outputs=_width_focus(
+                instrument=moved(translation, 0 * u.deg),
+                wavelength=wavelength,
+                channel=0,
+                num_field=num_field,
+                num_pupil=num_pupil,
+            ),
+            axis=axis,
+        )
+
+        # the upper stage, which focuses the last channel
+        angle_focus = _vertex(
+            inputs=angle,
+            outputs=_width_focus(
+                instrument=moved(translation_focus, angle),
+                wavelength=wavelength,
+                channel=~0,
+                num_field=num_field,
+                num_pupil=num_pupil,
+            ),
+            axis=axis,
+        )
+
+        return moved(translation_focus, angle_focus)
