@@ -72,9 +72,9 @@ def _band(instrument, num=5):
     )
 
 
-def _width(instrument, wavelength, channel, num_pupil=5):
+def _width(instrument, wavelength, channel, num_field=5, num_pupil=5):
     """The width of the lines of one channel, combined in quadrature."""
-    width = instrument.width_line(wavelength, num_pupil=num_pupil)
+    width = instrument.width_line(wavelength, num_field=num_field, num_pupil=num_pupil)
     width = width[{instrument.feed_optic.axis_channel: channel}]
     axis = tuple(na.shape(wavelength))
     if axis:
@@ -91,11 +91,11 @@ def test_width_line():
     axis = instrument.feed_optic.axis_channel
 
     # hydrogen Lyman alpha, which only the first channel sees
-    width = instrument.width_line(121.6 * u.nm, num_pupil=5)
+    width = instrument.width_line(121.6 * u.nm, num_field=5, num_pupil=5)
     assert width.shape == {axis: 7}
 
-    width = width.to(u.um)
-    assert 0 * u.um < width[{axis: 0}] < 5 * u.um
+    # narrower than a pixel, but never narrower than the pixel itself
+    assert np.sqrt(1 / 12) * u.pix < width[{axis: 0}] < 1 * u.pix
     assert np.isnan(width[{axis: ~0}])
 
 
@@ -108,7 +108,7 @@ def test_width_line_over_a_band():
     axis = instrument.feed_optic.axis_channel
     wavelength = _band(instrument)
 
-    width = instrument.width_line(wavelength, num_pupil=5)
+    width = instrument.width_line(wavelength, num_field=5, num_pupil=5)
     assert width.shape == {axis: 7, "wavelength": 5}
     assert np.all(np.isfinite(width))
 
@@ -173,5 +173,5 @@ def test_focused_improves_every_channel():
 
     for channel in range(7):
         width = _width(instrument, wavelength, channel)
-        assert width < 5 * u.um
+        assert width < 1 * u.pix
         assert width < _width(unfocused, wavelength, channel)

@@ -14,6 +14,7 @@ def _width_focus(
     instrument: "Instrument",
     wavelength: na.AbstractScalar,
     channel: int,
+    num_field: int,
     num_pupil: int,
 ) -> na.AbstractScalar:
     """
@@ -30,10 +31,12 @@ def _width_focus(
         The wavelengths to measure, whose axes are the ones combined over.
     channel
         The index of the channel to measure.
+    num_field
+        The number of samples along each axis of the solar disk.
     num_pupil
         The number of samples along each axis of the pupil.
     """
-    width = instrument.width_line(wavelength, num_pupil)
+    width = instrument.width_line(wavelength, num_field, num_pupil)
     width = width[{instrument.feed_optic.axis_channel: channel}]
     axis = tuple(na.shape(wavelength))
     if axis:
@@ -300,17 +303,19 @@ class Instrument(
     def width_line(
         self,
         wavelength: u.Quantity | na.AbstractScalar,
-        num_pupil: int = 11,
+        num_field: int = 9,
+        num_pupil: int = 9,
     ) -> na.AbstractScalar:
         """
         The width of the spectral line formed at the given wavelength,
         measured along the dispersion direction, for every channel.
 
-        This is the quantity minimized to focus the instrument, the analogue
-        of the width of a calibration lamp line measured on the bench.
-        It is computed from a point source at the center of the field, so it
-        is the blur of the optics alone and not the disk-integrated line
-        spread function.
+        This is the disk-integrated line spread function: the whole solar
+        disk is imaged onto a single column of pixels, so the width of a
+        line is the spread of the rays from the entire disk and the entire
+        pupil, added in quadrature with the width of a pixel.
+        It is the quantity plotted in the report, and the one minimized to
+        focus the instrument.
         Channels which do not see the given wavelength catch no rays, and
         their width is :obj:`numpy.nan`.
 
@@ -320,6 +325,8 @@ class Instrument(
             The wavelength of the line, in physical units.
             Any axes of this array are carried through to the result, so a
             grid of wavelengths can be measured at once.
+        num_field
+            The number of samples along each axis of the solar disk.
         num_pupil
             The number of samples along each axis of the pupil.
 
@@ -353,7 +360,7 @@ class Instrument(
             # Measure the width of the line in the first channel
             axis_channel = instrument.feed_optic.axis_channel
             width = instrument.width_line(wavelength)
-            width = width[{axis_channel: 0}].to(u.um)
+            width = width[{axis_channel: 0}]
 
             # Plot the focus curve
             with astropy.visualization.quantity_support():
@@ -362,14 +369,23 @@ class Instrument(
                 ax.set_xlabel(f"displacement of the array ({translation.unit:latex_inline})");
                 ax.set_ylabel(f"width of the line ({width.unit:latex_inline})");
         """
+        axis_field = ("field_x", "field_y")
+        axis_pupil = ("pupil_x", "pupil_y")
+
         instrument = dataclasses.replace(
             self,
             wavelength=wavelength,
-            field=na.Cartesian2dVectorArray(0, 0),
+            field=na.Cartesian2dVectorLinearSpace(
+                start=-1,
+                stop=1,
+                axis=na.Cartesian2dVectorArray(*axis_field),
+                num=num_field,
+                centers=True,
+            ),
             pupil=na.Cartesian2dVectorLinearSpace(
                 start=-1,
                 stop=1,
-                axis=na.Cartesian2dVectorArray("pupil_x", "pupil_y"),
+                axis=na.Cartesian2dVectorArray(*axis_pupil),
                 num=num_pupil,
                 centers=True,
             ),
@@ -377,9 +393,9 @@ class Instrument(
 
         rays = instrument.system.rayfunction_default.outputs
 
-        axis = ("pupil_x", "pupil_y")
+        axis = axis_field + axis_pupil
         weight = rays.unvignetted.astype(float)
-        position = rays.position.x
+        position = rays.position.x / instrument.system.sensor.width_pixel
 
         # a channel which sees none of the given wavelength catches no rays,
         # and divides zero by zero to give the documented NaN
@@ -387,7 +403,12 @@ class Instrument(
             mean = (position * weight).sum(axis) / weight.sum(axis)
             variance = (np.square(position - mean) * weight).sum(axis)
             variance = variance / weight.sum(axis)
-            result = np.sqrt(variance)
+
+            # the finite size of the pixel sampling the spectrum, which is
+            # a constant and so does not move the focus
+            variance = variance.to(u.dimensionless_unscaled) + 1 / 12
+
+            result = np.sqrt(variance) * u.pix
 
         return result
 
@@ -396,7 +417,8 @@ class Instrument(
         wavelength: None | na.AbstractScalar = None,
         translation: None | na.AbstractScalar = None,
         angle: None | na.AbstractScalar = None,
-        num_pupil: int = 11,
+        num_field: int = 9,
+        num_pupil: int = 9,
     ) -> "Instrument":
         """
         A copy of this instrument with its feed optic array moved to focus
@@ -418,6 +440,8 @@ class Instrument(
         widths of the lines at ``wavelength`` are combined in quadrature,
         which balances the channel across the detector, since a flat
         detector meets the curved focal surface at only two points.
+        The width is the disk-integrated one of :meth:`width_line`, so the
+        focus is set by the lines the instrument actually records.
         The bench instead focused a single calibration line in each of the
         two channels, chosen to fall where the detector crosses the Rowland
         circle, which is the same idea carried out with the lines that were
@@ -438,6 +462,8 @@ class Instrument(
             The displacements of the array to sample in the first step.
         angle
             The rotations of the array to sample in the second step.
+        num_field
+            The number of samples along each axis of the solar disk.
         num_pupil
             The number of samples along each axis of the pupil.
 
@@ -489,6 +515,7 @@ class Instrument(
                 instrument=moved(translation, 0 * u.deg),
                 wavelength=wavelength,
                 channel=0,
+                num_field=num_field,
                 num_pupil=num_pupil,
             ),
             axis=axis,
@@ -501,6 +528,7 @@ class Instrument(
                 instrument=moved(translation_focus, angle),
                 wavelength=wavelength,
                 channel=~0,
+                num_field=num_field,
                 num_pupil=num_pupil,
             ),
             axis=axis,
