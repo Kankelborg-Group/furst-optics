@@ -91,6 +91,12 @@ class Grating(
     The human-readable name of this optic.
     """
 
+    serial_number: None | str = None
+    """
+    The serial number Zeiss gave this grating, if it is a model of one of
+    the delivered gratings.
+    """
+
     sag: furst.typevars.SagT = None
     """
     The sag profile of the grating surface.

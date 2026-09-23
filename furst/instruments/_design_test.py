@@ -69,3 +69,38 @@ def test_design(func, rowland_radius: u.Quantity):
     intensity = na.nominal(rays.outputs.intensity)
     assert (intensity.mean("wavelength") > 0).all()
     assert (intensity < 0.1).all()
+
+
+def test_as_built():
+    design = furst.instruments.design(num_field=3, num_pupil=3)
+    result = furst.instruments.as_built(num_field=3, num_pupil=3)
+    assert isinstance(result, furst.instruments.Instrument)
+
+    # the flight grating has a longer radius than the layout it sits in,
+    # which is otherwise the layout of the design
+    assert result.grating.serial_number == "ID01"
+    assert result.grating.sag.radius == -1359 * u.mm
+    assert result.grating.rowland_radius == design.grating.rowland_radius
+    assert result.grating.rowland_azimuth == design.grating.rowland_azimuth
+    assert result.camera.sensor.rowland_radius == design.camera.sensor.rowland_radius
+    assert np.all(
+        result.feed_optic.rowland_azimuth == design.feed_optic.rowland_azimuth
+    )
+
+    # its grooves are those Zeiss simulated for it, at every channel's angle
+    rulings = result.grating.rulings
+    assert isinstance(rulings, optika.rulings.MeasuredRulings)
+    assert rulings.axis_angle is not None
+    assert rulings.spacing == design.grating.rulings.spacing
+
+    # and the feed optic array is moved to focus it
+    assert result.feed_optic.translation_focus == (
+        furst.instruments.translation_focus_as_built
+    )
+    assert result.feed_optic.angle_focus == furst.instruments.angle_focus_as_built
+
+    # every channel lands on the sensor
+    rays = result.system.rayfunction_default
+    assert np.isfinite(rays.outputs.position.x).all()
+    intensity = na.nominal(rays.outputs.intensity)
+    assert (intensity.mean("wavelength") > 0).all()

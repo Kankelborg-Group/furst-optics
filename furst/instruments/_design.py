@@ -8,6 +8,7 @@ import furst
 
 # defined in the package __init__ so that Sphinx documents them
 from . import translation_focus, angle_focus
+from . import translation_focus_as_built, angle_focus_as_built
 
 
 def _twist(
@@ -498,4 +499,113 @@ def design(
             sensor=sensor,
         ),
         filter=blind_filter,
+    )
+
+
+def as_built(
+    num_wavelength: int = 3,
+    num_field: int = 10,
+    num_pupil: int = 10,
+) -> "furst.instruments.Instrument":
+    """
+    The FURST instrument as it was built and flown.
+
+    This is :func:`design` with the flight grating, ID01, in place of the
+    grating of the design:
+
+    * Its radius of curvature is 1359 mm, rather than the 1354 mm the
+      instrument was laid out for.
+      The grating and the camera were placed where the layout put them
+      and were not moved, so the grating stays where :func:`design` puts
+      it, on the 1354 mm Rowland circle, and only its curvature changes.
+    * Its groove efficiency is the one Zeiss simulated from the profile
+      measured on this grating,
+      :func:`furst.gratings.rulings.rulings_delivered`, at the angle of
+      incidence of each channel.
+
+    The instrument was focused by moving the feed optic array, so the
+    array is moved to the position which focuses this instrument,
+    :data:`translation_focus_as_built` and :data:`angle_focus_as_built`,
+    rather than the one which focuses the design.
+
+    Parameters
+    ----------
+    num_wavelength
+        The number of wavelengths to sample in each channel.
+    num_field
+        The number of samples along each axis of the field of view.
+    num_pupil
+        The number of samples along each axis of the pupil.
+
+    Examples
+    --------
+
+    Compare the widest line in each channel of the flight instrument with
+    that of the design, both focused.
+
+    .. jupyter-execute::
+
+        import matplotlib.pyplot as plt
+        import astropy.visualization
+        import named_arrays as na
+        import furst
+
+        with astropy.visualization.quantity_support():
+            fig, ax = plt.subplots(constrained_layout=True)
+            for func in [furst.instruments.design, furst.instruments.as_built]:
+                instrument = func()
+                axis_channel = instrument.feed_optic.axis_channel
+                wavelength = na.linspace(
+                    start=instrument.wavelength.min(),
+                    stop=instrument.wavelength.max(),
+                    axis="wavelength",
+                    num=5,
+                )
+                width = instrument.width_line(wavelength).max("wavelength")
+                channel = na.arange(0, width.shape[axis_channel], axis=axis_channel)
+                na.plt.plot(
+                    channel,
+                    width,
+                    ax=ax,
+                    axis=axis_channel,
+                    marker="o",
+                    label=func.__name__,
+                )
+            ax.set_xlabel("channel");
+            ax.set_ylabel(f"widest line ({ax.get_ylabel()})");
+            ax.legend();
+    """
+
+    result = design(
+        num_wavelength=num_wavelength,
+        num_field=num_field,
+        num_pupil=num_pupil,
+    )
+
+    radius_grating = 1359 * u.mm
+
+    grating = dataclasses.replace(
+        result.grating,
+        serial_number="ID01",
+        sag=dataclasses.replace(
+            result.grating.sag,
+            radius=-radius_grating,
+        ),
+        rulings=furst.gratings.rulings.rulings_delivered(
+            serial_number="ID01",
+            spacing=result.grating.rulings.spacing,
+            diffraction_order=result.grating.rulings.diffraction_order,
+        ),
+    )
+
+    feed_optic = dataclasses.replace(
+        result.feed_optic,
+        translation_focus=translation_focus_as_built,
+        angle_focus=angle_focus_as_built,
+    )
+
+    return dataclasses.replace(
+        result,
+        feed_optic=feed_optic,
+        grating=grating,
     )

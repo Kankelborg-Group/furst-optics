@@ -15,6 +15,10 @@ import furst
             num_field=3,
             num_pupil=3,
         ),
+        furst.instruments.as_built(
+            num_field=3,
+            num_pupil=3,
+        ),
     ],
 )
 class TestInstrument(
@@ -123,19 +127,49 @@ def test_width_line_over_a_band():
         assert physical[index].max() < instrument.wavelength_max[index]
 
 
-def test_focused():
+_positions = na.linspace(-1.5, 1.5, axis="position", num=13)
+
+
+@pytest.mark.parametrize(
+    argnames="func,translation,angle,translation_expected,angle_expected",
+    argvalues=[
+        (
+            furst.instruments.design,
+            None,
+            None,
+            furst.instruments.translation_focus,
+            furst.instruments.angle_focus,
+        ),
+        # the flight instrument is focused far from the default grid, on a
+        # grid of the same size centered on its focus
+        (
+            furst.instruments.as_built,
+            furst.instruments.translation_focus_as_built + _positions * u.mm,
+            furst.instruments.angle_focus_as_built + _positions * 0.2 * u.deg,
+            furst.instruments.translation_focus_as_built,
+            furst.instruments.angle_focus_as_built,
+        ),
+    ],
+)
+def test_focused(
+    func,
+    translation: None | na.AbstractScalar,
+    angle: None | na.AbstractScalar,
+    translation_expected: u.Quantity,
+    angle_expected: u.Quantity,
+):
     """
-    Focusing the design reproduces the positions stored in the package, and
-    each stage is at the minimum of its own focus curve.
+    Focusing the instrument reproduces the positions stored in the package,
+    and each stage is at the minimum of its own focus curve.
     """
-    instrument = furst.instruments.design()
-    result = instrument.focused()
+    instrument = func()
+    result = instrument.focused(translation=translation, angle=angle)
 
     translation = result.feed_optic.translation_focus
     angle = result.feed_optic.angle_focus
-    error = np.abs(translation - furst.instruments.translation_focus)
+    error = np.abs(translation - translation_expected)
     assert np.all(error < 1e-3 * u.mm)
-    error = np.abs(angle - furst.instruments.angle_focus)
+    error = np.abs(angle - angle_expected)
     assert np.all(error < 1e-4 * u.deg)
 
     wavelength = _band(result)
@@ -156,18 +190,36 @@ def test_focused():
     assert width[{axis: 1}] < width[{axis: 2}]
 
 
-def test_focused_improves_every_channel():
+@pytest.mark.parametrize(
+    argnames="func,translation_unfocused,angle_unfocused",
+    argvalues=[
+        # where the array would sit without the visible-blind filter
+        (furst.instruments.design, 0 * u.mm, 0 * u.deg),
+        # where it would sit if the grating had the radius of the design
+        (
+            furst.instruments.as_built,
+            furst.instruments.translation_focus,
+            furst.instruments.angle_focus,
+        ),
+    ],
+)
+def test_focused_improves_every_channel(
+    func,
+    translation_unfocused: u.Quantity,
+    angle_unfocused: u.Quantity,
+):
     """
-    The design is focused, and moving the feed optic array back to where it
-    would sit without the visible-blind filter makes every channel worse.
+    The instrument is focused, and moving the feed optic array back to where
+    it would sit without the change being compensated makes every channel
+    worse.
     """
-    instrument = furst.instruments.design()
-    assert instrument.feed_optic.translation_focus != 0 * u.mm
+    instrument = func()
+    assert instrument.feed_optic.translation_focus != translation_unfocused
 
     unfocused = _moved(
         instrument,
-        translation_focus=0 * u.mm,
-        angle_focus=0 * u.deg,
+        translation_focus=translation_unfocused,
+        angle_focus=angle_unfocused,
     )
     wavelength = _band(instrument)
 
