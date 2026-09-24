@@ -20,7 +20,7 @@ __all__ = [
 # them back out of this partially initialized package.
 # See `furst.feed_optics.materials` for why.
 
-translation_focus = 0.8267 * u.mm
+translation_focus = 0.8046 * u.mm
 """
 The displacement of the feed optic array along the axis of the instrument
 which focuses the first channel, found by :meth:`Instrument.focused`.
@@ -31,7 +31,7 @@ nearly unit magnification, so the array must move away from the grating by
 about as much as the filter moves the focus away from it.
 """
 
-angle_focus = -0.00656 * u.deg
+angle_focus = -0.00755 * u.deg
 """
 The rotation of the feed optic array about the first feed optic which
 focuses the last channel, found by :meth:`Instrument.focused`.

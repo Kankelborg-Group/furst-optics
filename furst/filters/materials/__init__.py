@@ -1,11 +1,12 @@
 """
-Measurements of the visible-blind filter coating.
+Models and measurements of the visible-blind filter coating.
 """
 
 import astropy.units as u
 
 __all__ = [
     "angle_witness",
+    "transmission_design",
     "transmission_witness_measured",
 ]
 
@@ -22,4 +23,7 @@ transmission of this filter.
 The filter is used within a few degrees of normal in any case.
 """
 
-from ._materials import transmission_witness_measured  # noqa: E402
+from ._materials import (  # noqa: E402
+    transmission_design,
+    transmission_witness_measured,
+)

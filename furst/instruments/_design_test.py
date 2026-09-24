@@ -29,10 +29,10 @@ def test_design(func, rowland_radius: u.Quantity):
     assert result.camera.sensor.rowland_radius == result.grating.rowland_radius
     assert result.feed_optic.rowland_radius == result.grating.rowland_radius
 
-    # the measured coatings are on the feed optic and the grating, and the
+    # the nominal coatings are on the feed optic and the grating, and the
     # grating has the simulated groove efficiency
-    assert isinstance(result.feed_optic.material, optika.materials.MeasuredMirror)
-    assert isinstance(result.grating.material, optika.materials.MeasuredMirror)
+    assert isinstance(result.feed_optic.material, optika.materials.MultilayerMirror)
+    assert isinstance(result.grating.material, optika.materials.MultilayerMirror)
     assert isinstance(result.grating.rulings, optika.rulings.MeasuredRulings)
 
     # the visible-blind filter is a coated magnesium fluoride window on the
@@ -40,6 +40,7 @@ def test_design(func, rowland_radius: u.Quantity):
     # sensor stays on the Rowland circle
     assert isinstance(result.filter.material, optika.materials.MeasuredFilter)
     assert isinstance(result.filter.material.medium, optika.materials.Dielectric)
+    assert result.filter.thickness == furst.filters.thickness_design
     assert result.filter.rowland_radius == result.camera.sensor.rowland_radius
     assert result.filter.rowland_azimuth == result.camera.sensor.rowland_azimuth
     assert np.all(result.camera.sensor.translation == 0 * u.mm)
@@ -92,6 +93,19 @@ def test_as_built():
     assert isinstance(rulings, optika.rulings.MeasuredRulings)
     assert rulings.axis_angle is not None
     assert rulings.spacing == design.grating.rulings.spacing
+
+    # the coatings and the filter are the ones measured on the flight
+    # hardware, on substrates of the thicknesses of the design
+    feed = result.feed_optic.material
+    assert isinstance(feed, optika.materials.MeasuredMirror)
+    assert feed.substrate.thickness == design.feed_optic.material.substrate.thickness
+    coating = result.grating.material
+    assert isinstance(coating, optika.materials.MeasuredMirror)
+    assert coating.substrate.thickness == design.grating.material.substrate.thickness
+    witness = furst.filters.materials.transmission_witness_measured()
+    transmission = result.filter.material.efficiency_measured.outputs
+    assert np.all(transmission == witness.efficiency_measured.outputs)
+    assert result.filter.thickness == furst.filters.thickness_measured.mean()
 
     # and the feed optic array is moved to focus it
     assert result.feed_optic.translation_focus == (

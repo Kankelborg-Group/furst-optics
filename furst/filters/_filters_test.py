@@ -64,3 +64,9 @@ class TestFilter:
 
         # the index falls with wavelength, so the shift does too
         assert (np.diff(shift, axis="wavelength") < 0).all()
+
+
+def test_thickness_measured():
+    """Both windows came out within the tolerance they were specified to."""
+    error = furst.filters.thickness_measured - furst.filters.thickness_design
+    assert np.all(np.abs(error) <= 0.2 * u.mm)
