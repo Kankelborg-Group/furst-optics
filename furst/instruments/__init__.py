@@ -47,7 +47,7 @@ had to absorb the feed optic array having been re-placed for a grating
 whose radius differed from the design.
 """
 
-translation_focus_as_built = 11.0001 * u.mm
+translation_focus_as_built = 11.0011 * u.mm
 """
 The displacement of the feed optic array along the axis of the instrument
 which focuses the first channel of the flight instrument, found by
@@ -60,7 +60,7 @@ the focus about twice the difference, 10 mm, away from the grating, and
 the array has to follow it.
 """
 
-angle_focus_as_built = -0.1929 * u.deg
+angle_focus_as_built = -0.1938 * u.deg
 """
 The rotation of the feed optic array about the first feed optic which
 focuses the last channel of the flight instrument, found by

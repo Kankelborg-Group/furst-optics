@@ -88,6 +88,19 @@ def test_as_built():
         result.feed_optic.rowland_azimuth == design.feed_optic.rowland_azimuth
     )
 
+    # its clear aperture is the area Zeiss ruled on it, a little wider and
+    # much taller than the design needs
+    width_clear = result.grating.width_clear
+    width_clear_expected = furst.gratings.width_clear_delivered["ID01"]
+    assert width_clear.x == width_clear_expected.x
+    assert width_clear.y == width_clear_expected.y
+    assert width_clear.x > design.grating.width_clear.x
+    assert width_clear.y > design.grating.width_clear.y
+    width_mech = result.grating.width_mech
+    width_mech_expected = furst.gratings.width_mech_delivered["ID01"]
+    assert width_mech.x == width_mech_expected.x
+    assert width_mech.y == width_mech_expected.y
+
     # its grooves are those Zeiss simulated for it, at every channel's angle
     rulings = result.grating.rulings
     assert isinstance(rulings, optika.rulings.MeasuredRulings)

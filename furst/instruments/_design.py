@@ -519,14 +519,20 @@ def as_built(
 
     This is :func:`design` with the flight hardware in place of the
     hardware of the design.
-    The flight grating, ID01, differs from the grating of the design in two
-    ways:
+    The flight grating, ID01, differs from the grating of the design in
+    three ways:
 
     * Its radius of curvature is 1359 mm, rather than the 1354 mm the
       instrument was laid out for.
       The grating and the camera were placed where the layout put them
       and were not moved, so the grating stays where :func:`design` puts
       it, on the 1354 mm Rowland circle, and only its curvature changes.
+    * Its clear aperture is the area Zeiss ruled,
+      :data:`furst.gratings.width_clear_delivered`, on a substrate of the
+      size Zeiss measured, :data:`furst.gratings.width_mech_delivered`.
+      The ruled area is a little wider than the 180 mm of the design, and
+      much taller than the design, which is only as tall as the beam
+      needs.
     * Its groove efficiency is the one Zeiss simulated from the profile
       measured on this grating,
       :func:`furst.gratings.rulings.rulings_delivered`, at the angle of
@@ -635,6 +641,8 @@ def as_built(
     grating = dataclasses.replace(
         result.grating,
         serial_number="ID01",
+        width_clear=furst.gratings.width_clear_delivered["ID01"],
+        width_mech=furst.gratings.width_mech_delivered["ID01"],
         material=material_grating,
         sag=dataclasses.replace(
             result.grating.sag,
