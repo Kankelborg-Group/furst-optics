@@ -8,6 +8,7 @@ import furst
 
 # defined in the package __init__ so that Sphinx documents them
 from . import translation_focus, angle_focus
+from . import translation_focus_as_built, angle_focus_as_built
 
 
 def _twist(
@@ -173,7 +174,8 @@ def design_proposed(
 
     See Also
     --------
-    :func:`design`: The final design, adjusted for the grating as delivered.
+    :func:`design`: The final design, adjusted for the grating Zeiss designed.
+    :func:`as_built`: The instrument as it was built and flown.
     """
 
     num_channels = 7
@@ -231,10 +233,11 @@ def design_proposed(
 
     height_clear_grating = height_sensor + 2 * radius_grating * np.tan(radius_sun_max)
 
-    # The grating carries the coating Zeiss measured on a test piece before
-    # coating it, over a fused silica substrate, and its rulings have the
-    # groove efficiency Zeiss simulated.
-    material_grating = furst.gratings.materials.coating_measured()
+    # The grating is coated with the smooth stack of aluminum and magnesium
+    # fluoride Zeiss assumed when it simulated the grooves, over a fused
+    # silica substrate, and its rulings have the groove efficiency Zeiss
+    # simulated, so together they are the efficiency Zeiss predicted.
+    material_grating = furst.gratings.materials.coating_simulated()
     material_grating = dataclasses.replace(
         material_grating,
         substrate=dataclasses.replace(
@@ -275,10 +278,10 @@ def design_proposed(
     )
 
     # The feed optic is a solid rod, so its substrate is as thick as its
-    # radius. It carries the coating measured on the witness samples that
-    # were coated alongside it.
+    # radius. It carries the coating it was ordered with, similar to Acton
+    # broadband coating #1200.
     radius_feed = 3 * u.mm
-    material_feed = furst.feed_optics.materials.coating_witness_measured()
+    material_feed = furst.feed_optics.materials.coating_design()
     material_feed = dataclasses.replace(
         material_feed,
         substrate=dataclasses.replace(
@@ -306,12 +309,11 @@ def design_proposed(
     # Where exactly it sits on the head is not recorded, so it is placed
     # two inches in front of the sensor, as the original mechanical
     # placeholder and the pinhole study of the filter both assumed. The
-    # whole two-inch window is taken to be clear, and its thickness is the
-    # mean of the two windows that were measured, since which of them flew
-    # is not recorded either.
+    # whole two-inch window is taken to be clear. It has the transmission
+    # the vendor publishes and the thickness it was specified to.
     blind_filter = furst.filters.Filter(
-        material=furst.filters.materials.transmission_witness_measured(),
-        thickness=furst.filters.thickness_measured.mean(),
+        material=furst.filters.materials.transmission_design(),
+        thickness=furst.filters.thickness_design,
         radius_clear=25.4 * u.mm,
         radius_mech=25.4 * u.mm,
         distance=(2 * u.imperial.inch).to(u.mm),
@@ -376,13 +378,19 @@ def design(
     study.
 
     This is the design of :func:`design_proposed` adjusted for the grating
-    delivered by Zeiss, which has a radius of curvature of 1354 mm instead
+    Zeiss designed, which has a radius of curvature of 1354 mm instead
     of the 1350 mm originally specified.
     The Rowland circle grows to match the new grating, and the feed optics,
     the grating, and the sensor each move along the circle so as to keep
     their distance from the axis of the instrument.
     The heights of the grating and the feed optic are kept from the
     proposed design, as in the original study.
+
+    The coatings and the visible-blind filter are the ones the instrument
+    was designed with: the nominal coatings of the feed optics and the
+    grating, and the filter as its vendor publishes it, at the thickness it
+    was specified to.
+    The ones measured on the flight hardware are in :func:`as_built`.
 
     The feed optic array is moved to the position which focuses the
     instrument, :data:`translation_focus` and :data:`angle_focus`, since
@@ -497,5 +505,166 @@ def design(
             result.camera,
             sensor=sensor,
         ),
+        filter=blind_filter,
+    )
+
+
+def as_built(
+    num_wavelength: int = 3,
+    num_field: int = 10,
+    num_pupil: int = 10,
+) -> "furst.instruments.Instrument":
+    """
+    The FURST instrument as it was built and flown.
+
+    This is :func:`design` with the flight hardware in place of the
+    hardware of the design.
+    The flight grating, ID01, differs from the grating of the design in
+    three ways:
+
+    * Its radius of curvature is 1359 mm, rather than the 1354 mm the
+      instrument was laid out for.
+      The grating and the camera were placed where the layout put them
+      and were not moved, so the grating stays where :func:`design` puts
+      it, on the 1354 mm Rowland circle, and only its curvature changes.
+    * Its clear aperture is the area Zeiss ruled,
+      :data:`furst.gratings.width_clear_delivered`, on a substrate of the
+      size Zeiss measured, :data:`furst.gratings.width_mech_delivered`.
+      The ruled area is a little wider than the 180 mm of the design, and
+      much taller than the design, which is only as tall as the beam
+      needs.
+    * Its groove efficiency is the one Zeiss simulated from the profile
+      measured on this grating,
+      :func:`furst.gratings.rulings.rulings_delivered`, at the angle of
+      incidence of each channel.
+
+    The coatings and the filter are the ones measured on the flight
+    hardware:
+
+    * the feed optics carry the coating measured on the witness samples
+      coated alongside them,
+      :func:`furst.feed_optics.materials.coating_witness_measured`;
+    * the grating carries the coating Zeiss measured on a test piece it
+      coated just before the grating,
+      :func:`furst.gratings.materials.coating_measured`;
+    * the filter has the transmission measured on its witness sample,
+      :func:`furst.filters.materials.transmission_witness_measured`, and
+      the mean thickness of the two windows that were measured,
+      :data:`furst.filters.thickness_measured`, since which of them flew is
+      not recorded.
+
+    The instrument was focused by moving the feed optic array, so the
+    array is moved to the position which focuses this instrument,
+    :data:`translation_focus_as_built` and :data:`angle_focus_as_built`,
+    rather than the one which focuses the design.
+
+    Parameters
+    ----------
+    num_wavelength
+        The number of wavelengths to sample in each channel.
+    num_field
+        The number of samples along each axis of the field of view.
+    num_pupil
+        The number of samples along each axis of the pupil.
+
+    Examples
+    --------
+
+    Compare the widest line in each channel of the flight instrument with
+    that of the design, both focused.
+
+    .. jupyter-execute::
+
+        import matplotlib.pyplot as plt
+        import astropy.visualization
+        import named_arrays as na
+        import furst
+
+        with astropy.visualization.quantity_support():
+            fig, ax = plt.subplots(constrained_layout=True)
+            for func in [furst.instruments.design, furst.instruments.as_built]:
+                instrument = func()
+                axis_channel = instrument.feed_optic.axis_channel
+                wavelength = na.linspace(
+                    start=instrument.wavelength.min(),
+                    stop=instrument.wavelength.max(),
+                    axis="wavelength",
+                    num=5,
+                )
+                width = instrument.width_line(wavelength).max("wavelength")
+                channel = na.arange(0, width.shape[axis_channel], axis=axis_channel)
+                na.plt.plot(
+                    channel,
+                    width,
+                    ax=ax,
+                    axis=axis_channel,
+                    marker="o",
+                    label=func.__name__,
+                )
+            ax.set_xlabel("channel");
+            ax.set_ylabel(f"widest line ({ax.get_ylabel()})");
+            ax.legend();
+    """
+
+    result = design(
+        num_wavelength=num_wavelength,
+        num_field=num_field,
+        num_pupil=num_pupil,
+    )
+
+    radius_grating = 1359 * u.mm
+
+    material_feed = furst.feed_optics.materials.coating_witness_measured()
+    material_feed = dataclasses.replace(
+        material_feed,
+        substrate=dataclasses.replace(
+            material_feed.substrate,
+            thickness=result.feed_optic.material.substrate.thickness,
+        ),
+    )
+
+    material_grating = furst.gratings.materials.coating_measured()
+    material_grating = dataclasses.replace(
+        material_grating,
+        substrate=dataclasses.replace(
+            material_grating.substrate,
+            thickness=result.grating.material.substrate.thickness,
+        ),
+    )
+
+    blind_filter = dataclasses.replace(
+        result.filter,
+        material=furst.filters.materials.transmission_witness_measured(),
+        thickness=furst.filters.thickness_measured.mean(),
+    )
+
+    grating = dataclasses.replace(
+        result.grating,
+        serial_number="ID01",
+        width_clear=furst.gratings.width_clear_delivered["ID01"],
+        width_mech=furst.gratings.width_mech_delivered["ID01"],
+        material=material_grating,
+        sag=dataclasses.replace(
+            result.grating.sag,
+            radius=-radius_grating,
+        ),
+        rulings=furst.gratings.rulings.rulings_delivered(
+            serial_number="ID01",
+            spacing=result.grating.rulings.spacing,
+            diffraction_order=result.grating.rulings.diffraction_order,
+        ),
+    )
+
+    feed_optic = dataclasses.replace(
+        result.feed_optic,
+        material=material_feed,
+        translation_focus=translation_focus_as_built,
+        angle_focus=angle_focus_as_built,
+    )
+
+    return dataclasses.replace(
+        result,
+        feed_optic=feed_optic,
+        grating=grating,
         filter=blind_filter,
     )
