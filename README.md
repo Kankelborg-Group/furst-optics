@@ -6,6 +6,7 @@
 [![Ruff](https://github.com/Kankelborg-Group/furst-optics/actions/workflows/ruff.yml/badge.svg)](https://github.com/Kankelborg-Group/furst-optics/actions/workflows/ruff.yml)
 [![Documentation Status](https://readthedocs.org/projects/furst-optics/badge/?version=latest)](https://furst-optics.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/furst-optics.svg)](https://badge.fury.io/py/furst-optics)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23116748.svg)](https://doi.org/10.5281/zenodo.23116748)
 
 A model of the optical design for the Full-sun Ultraviolet Rocket Spectrometer (FURST).
 
@@ -22,14 +23,23 @@ pip install furst-optics
 If you use furst-optics in your research, please cite it.
 The citation metadata is kept in [`CITATION.cff`](https://github.com/Kankelborg-Group/furst-optics/blob/main/CITATION.cff),
 which the "Cite this repository" button on GitHub can export as BibTeX or APA.
+
+Every release of furst-optics is archived on Zenodo with its own DOI.
+The concept DOI, [10.5281/zenodo.23116748](https://doi.org/10.5281/zenodo.23116748),
+always resolves to the latest version,
+and the Zenodo page lists the DOI of every version.
 Please include the version of furst-optics that you used,
 which is given by `importlib.metadata.version("furst-optics")`.
+The BibTeX entry below uses the concept DOI.
+To cite a specific version instead,
+replace `doi` with the DOI of that version.
 
 ```bibtex
 @software{furst-optics,
   author = {Smart, Roy T. and Kankelborg, Charles C.},
   title = {furst-optics},
   version = {X.Y.Z},
+  doi = {10.5281/zenodo.23116748},
   url = {https://github.com/Kankelborg-Group/furst-optics},
 }
 ```
