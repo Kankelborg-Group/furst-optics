@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use furst-optics in your research, please cite it using these metadata."
+type: software
+title: furst-optics
+abstract: >-
+  furst-optics is a Python library which models the optical system of the
+  Full-sun Ultraviolet Rocket Spectrometer (FURST), a NASA sounding rocket
+  mission which measures the spectrum of the whole Sun in the far ultraviolet
+  at high spectral resolution. Built on optika, it includes both the optical
+  design and the instrument as it was built and flown, for use by the FURST
+  data reduction pipeline.
+authors:
+  - family-names: Smart
+    given-names: Roy T.
+    orcid: "https://orcid.org/0000-0002-9997-5515"
+  - family-names: Kankelborg
+    given-names: Charles C.
+    orcid: "https://orcid.org/0000-0002-1992-7469"
+repository-code: "https://github.com/Kankelborg-Group/furst-optics"
+url: "https://furst-optics.readthedocs.io"
+license: BSD-3-Clause
+keywords:
+  - FURST
+  - sounding rocket
+  - ultraviolet spectroscopy
+  - solar physics

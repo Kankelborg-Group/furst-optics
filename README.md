@@ -16,3 +16,20 @@ This package is published on PyPI and can be installed using pip:
 ```bash
 pip install furst-optics
 ```
+
+## Citation
+
+If you use furst-optics in your research, please cite it.
+The citation metadata is kept in [`CITATION.cff`](https://github.com/Kankelborg-Group/furst-optics/blob/main/CITATION.cff),
+which the "Cite this repository" button on GitHub can export as BibTeX or APA.
+Please include the version of furst-optics that you used,
+which is given by `importlib.metadata.version("furst-optics")`.
+
+```bibtex
+@software{furst-optics,
+  author = {Smart, Roy T. and Kankelborg, Charles C.},
+  title = {furst-optics},
+  version = {X.Y.Z},
+  url = {https://github.com/Kankelborg-Group/furst-optics},
+}
+```
