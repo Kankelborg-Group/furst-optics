@@ -29,6 +29,27 @@ Reports
 
     reports/design
 
+Citation
+========
+
+If you use :mod:`furst` in your research, please cite it.
+The citation metadata is kept in
+`CITATION.cff <https://github.com/Kankelborg-Group/furst-optics/blob/main/CITATION.cff>`_,
+which the "Cite this repository" button on the
+`GitHub page <https://github.com/Kankelborg-Group/furst-optics>`_
+can export as BibTeX or APA.
+Please include the version of :mod:`furst` that you used,
+which is given by ``importlib.metadata.version("furst-optics")``.
+
+.. code-block:: bibtex
+
+    @software{furst-optics,
+      author = {Smart, Roy T. and Kankelborg, Charles C.},
+      title = {furst-optics},
+      version = {X.Y.Z},
+      url = {https://github.com/Kankelborg-Group/furst-optics},
+    }
+
 API Reference
 =============
 
